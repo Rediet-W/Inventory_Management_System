@@ -38,22 +38,18 @@ const SalesPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Fetch all products from the shop
   const { data: shopProducts } = useGetShopProductsQuery();
 
-  // Fetch sales for the specific date, refetch when refreshKey changes
   const { data: sales, refetch } = useGetSalesByDateQuery(saleDate);
 
   const [addSale] = useAddSaleMutation();
   const [deleteSale] = useDeleteSaleMutation();
   const [editSale] = useEditSaleMutation();
 
-  // Re-fetch sales data whenever refreshKey changes
   useEffect(() => {
     refetch();
   }, [refreshKey, refetch]);
 
-  // Handle adding sale
   const handleAddSale = async () => {
     setErrorMessage("");
     if (!selectedProduct || quantity <= 0) return;

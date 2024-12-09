@@ -15,7 +15,6 @@ import HomeScreen from "./screens/HomeScreen";
 import LoginScreen from "./screens/LoginScreen.jsx";
 import RegisterScreen from "./screens/RegisterScreen.jsx";
 import ProfileScreen from "./screens/ProfileScreen.jsx";
-import PrivateRoute from "./components/PrivateRoute.jsx";
 import InventoryScreen from "./screens/InventoryScreen.jsx";
 import RequestedProductsPage from "./screens/RequestedProductPage.jsx";
 
@@ -32,17 +31,15 @@ const router = createBrowserRouter(
       <Route index={true} path="/" element={<HomeScreen />} />
       <Route path="/login" element={<LoginScreen />} />
       <Route path="/register" element={<RegisterScreen />} />
-      <Route path="" element={<PrivateRoute />}>
-        <Route path="/profile" element={<ProfileScreen />} />
-        <Route path="/requested" element={<RequestedProductsPage />} />
-        <Route path="/sales" element={<SalesPage />} />
-        <Route path="/add-products" element={<AddProductPage />} />
-        <Route path="/shop" element={<ShopPage />} />
-        <Route path="/employees" element={<EmployeesPage />} />
-        <Route path="/store" element={<InventoryScreen />} />
-        <Route path="/summary" element={<SummaryPage />} />
-        <Route path="/report" element={<ReportPage />} />
-      </Route>
+      <Route path="/profile" element={<ProfileScreen />} />
+      <Route path="/requested" element={<RequestedProductsPage />} />
+      <Route path="/sales" element={<SalesPage />} />
+      <Route path="/add-products" element={<AddProductPage />} />
+      <Route path="/shop" element={<ShopPage />} />
+      <Route path="/employees" element={<EmployeesPage />} />
+      <Route path="/store" element={<InventoryScreen />} />
+      <Route path="/summary" element={<SummaryPage />} />
+      <Route path="/report" element={<ReportPage />} />
     </Route>
   )
 );

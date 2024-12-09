@@ -38,7 +38,8 @@ const RequestedProductsPage = () => {
   const [updateRequestedProduct] = useUpdateRequestedProductMutation();
 
   const { userInfo } = useSelector((state) => state.auth);
-
+  // console.log("here it is ");
+  // console.log(userInfo);
   // Modal state and pagination state
   const [showModal, setShowModal] = useState(false);
   const [productName, setProductName] = useState("");
@@ -53,7 +54,6 @@ const RequestedProductsPage = () => {
     refetch();
   }, [refreshKey, refetch]);
 
-  // Handle modal show and hide
   const handleShowModal = () => setShowModal(true);
   const handleCloseModal = () => {
     setShowModal(false);
@@ -62,7 +62,6 @@ const RequestedProductsPage = () => {
     setQuantity(1);
   };
 
-  // Handle form submission
   const handleAddProduct = async () => {
     await createRequestedProduct({
       product_name: productName,
@@ -70,10 +69,9 @@ const RequestedProductsPage = () => {
       quantity,
     });
     handleCloseModal();
-    dispatch(triggerRefresh()); // Trigger refresh on addition
+    dispatch(triggerRefresh());
   };
 
-  // Handle product deletion (bulk for admin)
   const handleDelete = async () => {
     if (
       window.confirm("Are you sure you want to delete the selected products?")
@@ -82,17 +80,15 @@ const RequestedProductsPage = () => {
         await deleteRequestedProduct(productId);
       }
       setSelectedProducts([]);
-      dispatch(triggerRefresh()); // Trigger refresh on deletion
+      dispatch(triggerRefresh());
     }
   };
 
-  // Handle quantity update for users
   const handleQuantityChange = async (productId, newQuantity) => {
     await updateRequestedProduct({ id: productId, quantity: newQuantity });
-    dispatch(triggerRefresh()); // Trigger refresh on update
+    dispatch(triggerRefresh());
   };
 
-  // Handle admin product selection for deletion
   const handleSelectProduct = (productId) => {
     setSelectedProducts((prev) =>
       prev.includes(productId)
@@ -101,12 +97,10 @@ const RequestedProductsPage = () => {
     );
   };
 
-  // Sort products by quantity or timestamp (newest at top)
   const sortedRequestedProducts = requestedProducts
     ?.slice()
     .sort((a, b) => b.quantity - a.quantity);
 
-  // Pagination logic
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = sortedRequestedProducts?.slice(
@@ -127,7 +121,6 @@ const RequestedProductsPage = () => {
           <h2 className="text-center">Requested Products</h2>
         </Col>
 
-        {/* Add Requested Product Button for users (not admins) */}
         {userInfo?.role !== "admin" && (
           <Col className="text-end">
             <Button variant="primary" onClick={handleShowModal}>
@@ -136,7 +129,6 @@ const RequestedProductsPage = () => {
           </Col>
         )}
 
-        {/* Delete Button for admins */}
         {userInfo?.role === "admin" && selectedProducts.length > 0 && (
           <Col className="text-end">
             <Button variant="danger" onClick={handleDelete}>
@@ -146,7 +138,6 @@ const RequestedProductsPage = () => {
         )}
       </Row>
 
-      {/* Loading and error handling */}
       {isLoading ? (
         <div className="text-center">
           <Spinner animation="border" variant="primary" />
@@ -209,7 +200,6 @@ const RequestedProductsPage = () => {
         ))}
       </Pagination>
 
-      {/* Modal for adding requested product */}
       <Modal show={showModal} onHide={handleCloseModal} centered>
         <Modal.Header closeButton>
           <Modal.Title>Add Requested Product</Modal.Title>

@@ -6,26 +6,25 @@
   top: 0;
   left: 0;
   height: 100vh;
-  background-color: #f8f9fa; /* Bootstrap light bg */
+  background-color: #f8f9fa;
   overflow: hidden;
 }
 
-/* Sidebar text is hidden when collapsed */
 .sidebar-text {
   display: none;
 }
 
-/* On hover, the sidebar expands */
 .sidebar:hover {
   width: 250px; /* Expanded width */
 }
 
-/* Show sidebar text when hovered */
 .sidebar:hover .sidebar-text {
-  display: inline; /* Show the text */
+  display: inline;
+}
+.sidebar-container .nav-item .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Ensure icons and text align correctly when sidebar expands */
 .sidebar .nav-link {
   white-space: nowrap;
   padding: 10px;
@@ -34,12 +33,10 @@
   align-items: center;
 }
 
-/* Ensure icons don't move around when sidebar expands */
 .sidebar .nav-link .me-2 {
-  min-width: 40px; /* Fix the width of the icon so it stays in place */
+  min-width: 40px;
 }
 
-/* Responsive: Collapse the sidebar by default on small screens */
 @media (max-width: 768px) {
   .sidebar {
     width: 80px;
@@ -48,4 +45,62 @@
   .sidebar:hover {
     width: 250px;
   }
+}
+.sales-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  background-color: #0d6efd;
+  border-radius: 50%;
+  margin: 0 auto;
+  margin-top: 5px;
+}
+.nav-item:active {
+  background-color: #f8f9fa;
+}
+
+.react-calendar {
+  max-width: 300px;
+  font-size: 0.8rem;
+  margin: 0 auto;
+}
+
+.react-calendar__navigation button {
+  font-size: 0.9rem;
+  padding: 5px;
+}
+
+.react-calendar__tile {
+  padding: 10px;
+  font-size: 0.8rem;
+}
+
+.sidebar-container {
+  width: 250px;
+  background: linear-gradient(180deg, #007bff, #ffcc00);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  left: 0;
+  transition: width 0.3s ease-in-out;
+  z-index: 1000;
+}
+
+.collapsed-sidebar {
+  width: 80px;
+}
+
+.sidebar-container button {
+  position: absolute;
+  top: 15px;
+  right: -40px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

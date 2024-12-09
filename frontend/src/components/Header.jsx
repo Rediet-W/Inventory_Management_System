@@ -1,5 +1,6 @@
+import React from "react";
 import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
-import { FaSignInAlt, FaSignOutAlt } from "react-icons/fa";
+import { FaSignInAlt, FaSignOutAlt } from "react-icons/fa"; // Removed FaBars
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -30,8 +31,9 @@ const Header = () => {
         expand="lg"
         collapseOnSelect
         style={{
-          background: "linear-gradient(to right, #007bff, #ffcc00)", // Gradient background
-          color: "#fff", // Text remains white
+          background: "linear-gradient(to right, #007bff, #ffcc00)",
+          color: "#fff",
+          width: "100%",
         }}
       >
         <Container>
@@ -57,7 +59,6 @@ const Header = () => {
                 <>
                   <LinkContainer to="/login">
                     <Nav.Link>
-                      {/* Ensure the Nav.Link has only one child by wrapping in a span */}
                       <span>
                         <FaSignInAlt style={{ color: "#fff" }} /> Sign In
                       </span>
@@ -65,7 +66,6 @@ const Header = () => {
                   </LinkContainer>
                   <LinkContainer to="/register">
                     <Nav.Link>
-                      {/* Ensure the Nav.Link has only one child by wrapping in a span */}
                       <span>
                         <FaSignOutAlt style={{ color: "#fff" }} /> Sign Up
                       </span>

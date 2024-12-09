@@ -6,8 +6,11 @@ import { useGetPurchasesByDateRangeQuery } from "../slices/purchaseApiSlice";
 import { Bar } from "react-chartjs-2";
 import "chart.js/auto";
 import moment from "moment";
+import { useSelector } from "react-redux";
+import SalesCalendar from "../components/SalesCalendar";
 
 const HomePage = () => {
+  const { userInfo } = useSelector((state) => state.auth);
   const today = new Date();
   const startDate = moment(today).subtract(6, "days").format("YYYY-MM-DD");
   const endDate = moment(today).format("YYYY-MM-DD");
@@ -16,23 +19,24 @@ const HomePage = () => {
     data: sales,
     isLoading: salesLoading,
     error: salesError,
-  } = useGetSalesByDateRangeQuery({
-    startDate,
-    endDate,
-  });
+  } = useGetSalesByDateRangeQuery({ startDate, endDate });
 
   const {
     data: purchases,
     isLoading: purchasesLoading,
     error: purchasesError,
-  } = useGetPurchasesByDateRangeQuery({
-    startDate,
-    endDate,
-  });
+  } = useGetPurchasesByDateRangeQuery({ startDate, endDate });
 
   if (salesLoading || purchasesLoading)
-    return <div>Loading sales and purchases data...</div>;
-  if (salesError || purchasesError) return <div>Error loading data</div>;
+    return (
+      <div className="text-center mt-5">
+        Loading sales and purchases data...
+      </div>
+    );
+  if (salesError || purchasesError)
+    return (
+      <div className="text-center mt-5 text-danger">Error loading data</div>
+    );
 
   const last7Days = Array.from({ length: 7 }, (_, i) =>
     moment(today).subtract(i, "days").format("YYYY-MM-DD")
@@ -45,8 +49,7 @@ const HomePage = () => {
       : sale.selling_price * sale.quantity_sold;
     return acc;
   }, {});
-  console.log(salesByDate, "sale");
-  console.log(sales, "ss");
+
   const purchasesByDate = purchases.reduce((acc, purchase) => {
     const purchaseDate = moment(purchase.purchase_date).format("YYYY-MM-DD");
     acc[purchaseDate] = acc[purchaseDate]
@@ -64,53 +67,63 @@ const HomePage = () => {
       {
         label: "Total Sales (ETB)",
         data: salesAmounts,
-        backgroundColor: "#0d6efd",
-        borderColor: "#0d6efd",
-        borderWidth: 1,
+        backgroundColor: "rgba(13, 110, 253, 0.5)",
+        borderColor: "rgba(13, 110, 253, 1)",
+        borderWidth: 2,
       },
       {
         label: "Total Purchases (ETB)",
         data: purchasesAmounts,
-        backgroundColor: "#ffc107",
-        borderColor: "#ffc107",
-        borderWidth: 1,
+        backgroundColor: "rgba(255, 193, 7, 0.5)",
+        borderColor: "rgba(255, 193, 7, 1)",
+        borderWidth: 2,
       },
     ],
   };
 
   return (
     <Container className="mt-5">
-      <Row className="align-items-center mb-4">
-        <Col md={6} className="text-center">
+      <Row className="align-items-center text-center">
+        <Col md={6}>
           <img
             src="/image.png"
             alt="Shop Logo"
             style={{
-              width: "200px",
+              width: "150px",
               height: "auto",
-              objectFit: "contain",
+              borderRadius: "50%",
+              border: "3px solid #0d6efd",
             }}
           />
         </Col>
-        <Col md={6} className="text-center">
-          <h1 className="mt-3">Welcome to Our Shop Dashboard</h1>
+        <Col md={6}>
+          <h1 className="mt-3 fw-bold">Welcome </h1>
         </Col>
       </Row>
 
-      <Row>
-        <Col md={4}>
-          <HomeTop />
-        </Col>
-
-        <Col md={8}>
-          <Card className="text-center shadow-sm">
-            <Card.Body>
-              <Card.Title>Sales and Purchases for the Last 7 Days</Card.Title>
-              <Bar data={chartData} />
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      {userInfo?.role !== "superadmin" && (
+        <>
+          <Row className="mb-4">
+            {" "}
+            <HomeTop />
+          </Row>
+          <Row className="mb-4">
+            <Col md={5}>
+              <SalesCalendar />{" "}
+            </Col>
+            <Col md={7}>
+              <Card className="text-center shadow-lg border-0">
+                <Card.Body>
+                  <Card.Title className="fw-bold">
+                    Sales and Purchases for the Last 7 Days
+                  </Card.Title>
+                  <Bar data={chartData} />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </>
+      )}
     </Container>
   );
 };

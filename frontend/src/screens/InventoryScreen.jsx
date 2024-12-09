@@ -33,7 +33,7 @@ const InventoryPage = () => {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    refetch(); // Re-fetch data when refreshKey changes
+    refetch();
   }, [refreshKey, refetch]);
 
   if (isLoading) return <div>Loading...</div>;

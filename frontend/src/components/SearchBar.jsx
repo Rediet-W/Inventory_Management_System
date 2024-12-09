@@ -7,15 +7,12 @@ const SearchBar = ({
   searchType,
   setSearchType,
 }) => {
-  // Handle the selected search type (Product Name or Batch Number)
   const handleSelect = (eventKey) => {
-    setSearchType(eventKey); // Set the selected search type (either 'productName' or 'batchNumber')
+    setSearchType(eventKey);
   };
 
   return (
     <InputGroup className="mb-3">
-      {/* Search Input */}
-
       <Form.Control
         placeholder={`Search by ${
           searchType === "productName" ? "Product Name" : "Batch Number"
@@ -32,8 +29,6 @@ const SearchBar = ({
         <Dropdown.Item eventKey="productName">Product Name</Dropdown.Item>
         <Dropdown.Item eventKey="batchNumber">Batch Number</Dropdown.Item>
       </DropdownButton>
-
-      {/* Dropdown Button to select search type */}
     </InputGroup>
   );
 };

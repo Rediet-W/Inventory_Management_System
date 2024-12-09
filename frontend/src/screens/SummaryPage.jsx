@@ -5,6 +5,7 @@ import { Nav, Tab, Form, Button, Alert, Card, Row, Col } from "react-bootstrap";
 import { FaDownload } from "react-icons/fa";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import logo from "../assets/logo.png";
 
 const SummaryPage = () => {
   const [startDate, setStartDate] = useState("");
@@ -52,14 +53,41 @@ const SummaryPage = () => {
     }
   };
 
-  const exportPDF = (sectionId, title) => {
+  const exportPDF = async (sectionId, title) => {
     const input = document.getElementById(sectionId);
-    html2canvas(input).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF();
-      pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
-      pdf.save(`${title}.pdf`);
-    });
+    if (!input) {
+      console.error(`Element with id ${sectionId} not found`);
+      return;
+    }
+
+    const currentDate = new Date().toLocaleDateString("en-GB");
+    const formattedStartDate = startDate
+      ? new Date(startDate).toLocaleDateString("en-GB")
+      : "N/A";
+    const formattedEndDate = endDate
+      ? new Date(endDate).toLocaleDateString("en-GB")
+      : "N/A";
+
+    const canvas = await html2canvas(input);
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const imgWidth = 190;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    // Add header
+    pdf.addImage(logo, "PNG", 10, 10, 30, 30); // Adjust size and position as needed
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.text(title, 55, 20);
+    pdf.setFontSize(12);
+    pdf.text(`Generated On: ${currentDate}`, 55, 30);
+    pdf.text(`Period: ${formattedStartDate} to ${formattedEndDate}`, 55, 40);
+
+    // Add content
+    pdf.addImage(imgData, "PNG", 10, 50, imgWidth, imgHeight);
+
+    // Save the PDF
+    pdf.save(`${title}.pdf`);
   };
 
   return (

@@ -14,7 +14,6 @@ import { useNavigate } from "react-router-dom";
 import { useDeleteProductMutation } from "../slices/productApiSlice";
 import { useSelector } from "react-redux";
 
-// Function to format date to DD-MMM-YYYY
 const formatDate = (dateString) => {
   const options = { day: "2-digit", month: "short", year: "numeric" };
   return new Date(dateString)
@@ -29,7 +28,7 @@ const AddProductPage = () => {
   const [sellingPrice, setSellingPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [date, setDate] = useState("");
-  const [batchNumber, setBatchNumber] = useState(""); // New state for batch number
+  const [batchNumber, setBatchNumber] = useState("");
 
   const [createProduct, { isLoading: productLoading, error: productError }] =
     useCreateProductMutation();
@@ -42,43 +41,38 @@ const AddProductPage = () => {
     e.preventDefault();
 
     try {
-      // First, create the product (without username)
       const productData = {
         name,
         quantity: 0,
         buyingPrice: Number(buyingPrice),
         sellingPrice: Number(sellingPrice),
-        batchNumber, // Add batch number to product data
+        batchNumber,
       };
 
       const createdProduct = await createProduct(productData).unwrap();
       console.log(createProduct, "created product");
       try {
-        // Then, use the created product's ID to create the purchase
         const purchaseData = {
-          productId: createdProduct.id, // Use productId from created product
+          productId: createdProduct.id,
           quantity: Number(quantity),
           buyingPrice: Number(buyingPrice),
           purchaseDate: date,
-          userName: userInfo?.name, // Pass the userName for the purchase
+          userName: userInfo?.name,
         };
 
         await createPurchase(purchaseData).unwrap();
 
-        // Redirect after successful addition
         navigate("/");
       } catch (purchaseError) {
-        // If creating the purchase fails, delete the product
         console.error(
           "Purchase creation failed. Deleting product...",
           purchaseError
         );
 
-        await deleteProduct(createdProduct._id).unwrap(); // Delete the product if purchase fails
+        await deleteProduct(createdProduct._id).unwrap();
 
         console.error("Product deleted after purchase creation failed.");
 
-        // Optionally, display an error message to the user
         alert("Error creating purchase. Product creation was rolled back.");
       }
     } catch (productError) {
@@ -95,7 +89,6 @@ const AddProductPage = () => {
               <h2 className="text-center mb-4">Add New Product</h2>
 
               <Form onSubmit={handleAddProduct}>
-                {/* Product Name */}
                 <Form.Group controlId="productName" className="mb-3">
                   <Form.Label>Product Name</Form.Label>
                   <Form.Control
@@ -109,7 +102,6 @@ const AddProductPage = () => {
 
                 <Row>
                   <Col md={6}>
-                    {/* Buying Price */}
                     <Form.Group controlId="buyingPrice" className="mb-3">
                       <Form.Label>Buying Price</Form.Label>
                       <Form.Control
@@ -122,7 +114,6 @@ const AddProductPage = () => {
                     </Form.Group>
                   </Col>
                   <Col md={6}>
-                    {/* Selling Price */}
                     <Form.Group controlId="sellingPrice" className="mb-3">
                       <Form.Label>Selling Price</Form.Label>
                       <Form.Control
@@ -138,7 +129,6 @@ const AddProductPage = () => {
 
                 <Row>
                   <Col md={6}>
-                    {/* Quantity */}
                     <Form.Group controlId="quantity" className="mb-3">
                       <Form.Label>Quantity</Form.Label>
                       <Form.Control
@@ -151,7 +141,6 @@ const AddProductPage = () => {
                     </Form.Group>
                   </Col>
                   <Col md={6}>
-                    {/* Date */}
                     <Form.Group controlId="date" className="mb-3">
                       <Form.Label>Date</Form.Label>
                       <Form.Control
@@ -164,7 +153,6 @@ const AddProductPage = () => {
                   </Col>
                 </Row>
 
-                {/* Batch Number */}
                 <Form.Group controlId="batchNumber" className="mb-3">
                   <Form.Label>Batch Number</Form.Label>
                   <Form.Control
@@ -176,7 +164,6 @@ const AddProductPage = () => {
                   />
                 </Form.Group>
 
-                {/* Submit Button */}
                 <Button
                   variant="primary"
                   type="submit"
@@ -188,7 +175,6 @@ const AddProductPage = () => {
                     : "Add Product"}
                 </Button>
 
-                {/* Display Error Message */}
                 {productError && (
                   <Alert variant="danger" className="mt-3">
                     {productError.data?.message || productError.error}

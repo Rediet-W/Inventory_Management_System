@@ -49,8 +49,6 @@ const EmployeesPage = () => {
         <tbody>
           {users.map((user) => (
             <tr key={user.id}>
-              {" "}
-              {/* Use 'id' for MySQL */}
               <td>{user.name}</td>
               <td>{user.email}</td>
               <td>{user.role}</td>
