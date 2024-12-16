@@ -1,9 +1,11 @@
-import { fetchBaseQuery, createApi } from '@reduxjs/toolkit/query/react';
+import { fetchBaseQuery, createApi } from "@reduxjs/toolkit/query/react";
 
-const baseQuery = fetchBaseQuery({ baseUrl: '' });
+const baseQuery = fetchBaseQuery({
+  baseUrl: "https://inventory-management-system-mk96.onrender.com/",
+});
 
 export const apiSlice = createApi({
   baseQuery,
-  tagTypes: ['User'],
+  tagTypes: ["User"],
   endpoints: (builder) => ({}),
 });
