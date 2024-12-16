@@ -3,6 +3,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { connectDB, sequelize } from "./config/db.js"; // Use Sequelize connection
 import cookieParser from "cookie-parser";
+import cors from "cors"; // Import CORS middleware
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import userRoutes from "./routes/userRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
@@ -22,6 +23,15 @@ const startServer = async () => {
     await sequelize.sync(); // Sync Sequelize models with the MySQL database
 
     const app = express();
+
+    // Enable CORS
+    app.use(
+      cors({
+        origin: ["http://localhost:3000", "https://your-frontend-domain.com"], // Allowed origins
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
+        credentials: true, // Allow cookies or Authorization headers
+      })
+    );
 
     // Middleware to parse incoming requests
     app.use(express.json());
