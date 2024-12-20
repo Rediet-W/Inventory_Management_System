@@ -49,7 +49,7 @@ const startServer = async () => {
           // Reject any other origins
           callback(new Error("Not allowed by CORS"));
         },
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Allowed HTTP methods
         credentials: true, // Allow cookies or Authorization headers
       })
     );
