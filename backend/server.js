@@ -27,7 +27,7 @@ const startServer = async () => {
     // Enable CORS
     app.use(
       cors({
-        origin: ["http://localhost:3000", "https://your-frontend-domain.com"], // Allowed origins
+        origin: ["http://localhost:3000", "https://inventory-management-system-b4w1cl0w1-rediet-ws-projects.vercel.app'"], // Allowed origins
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
         credentials: true, // Allow cookies or Authorization headers
       })
