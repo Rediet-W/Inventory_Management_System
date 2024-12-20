@@ -27,12 +27,32 @@ const startServer = async () => {
     // Enable CORS
     app.use(
       cors({
-        origin: ["http://localhost:3000", "https://inventory-management-system-b4w1cl0w1-rediet-ws-projects.vercel.app"], // Allowed origins
+        origin: (origin, callback) => {
+          // Allowed static origins
+          const allowedOrigins = [
+            "http://localhost:3000", // Local development
+            "https://inventory-management-system.vercel.app", // Stable production URL
+          ];
+
+          // Allow requests from static origins or Vercel preview URLs
+          if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true); // Allow if origin is static or no origin (e.g., Postman)
+          }
+
+          // Allow dynamic Vercel preview URLs
+          const regex =
+            /^https:\/\/inventory-management-system-[\w-]+\.vercel\.app$/;
+          if (regex.test(origin)) {
+            return callback(null, true); // Allow preview deployments
+          }
+
+          // Reject any other origins
+          callback(new Error("Not allowed by CORS"));
+        },
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
         credentials: true, // Allow cookies or Authorization headers
       })
     );
-
     // Middleware to parse incoming requests
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));

@@ -1,7 +1,7 @@
 import { fetchBaseQuery, createApi } from "@reduxjs/toolkit/query/react";
-
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
 const baseQuery = fetchBaseQuery({
-  baseUrl: "https://inventory-management-system-mk96.onrender.com",
+  baseUrl: backendUrl,
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     // Retrieve userInfo from the Redux state
