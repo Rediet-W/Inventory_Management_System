@@ -1,8 +1,6 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiSlice } from "./apiSlice"; // Reuse the base configuration from apiSlice
 
-export const summaryApiSlice = createApi({
-  reducerPath: "summaryApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api" }), // Assuming your API is accessible at `/api`
+export const summaryApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Fetch sales within a date range
     getSalesByDateRange: builder.query({

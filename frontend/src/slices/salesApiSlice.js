@@ -1,18 +1,13 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiSlice } from "./apiSlice";
 
-export const salesApiSlice = createApi({
-  reducerPath: "salesApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api" }),
+export const salesApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // Fetch all sales
     getAllSales: builder.query({
-      query: () => "/sales", // Route to get all sales
+      query: () => "/sales",
     }),
-    // Fetch sales for a specific date
     getSalesByDate: builder.query({
-      query: (date) => `/sales/date?date=${date}`, // Adjusted for the new route
+      query: (date) => `/sales/date?date=${date}`,
     }),
-    // Add a new sale
     addSale: builder.mutation({
       query: (saleData) => ({
         url: "/sales",
@@ -20,7 +15,6 @@ export const salesApiSlice = createApi({
         body: saleData,
       }),
     }),
-    // Delete a sale
     deleteSale: builder.mutation({
       query: (saleId) => ({
         url: `/sales/${saleId}`,
@@ -31,7 +25,6 @@ export const salesApiSlice = createApi({
       query: ({ startDate, endDate }) =>
         `/sales/range?startDate=${startDate}&endDate=${endDate}`,
     }),
-    // Edit a sale
     editSale: builder.mutation({
       query: ({ saleId, saleData }) => ({
         url: `/sales/${saleId}`,
@@ -42,7 +35,6 @@ export const salesApiSlice = createApi({
   }),
 });
 
-// Export the hooks to use in the component
 export const {
   useGetSalesByDateQuery,
   useAddSaleMutation,

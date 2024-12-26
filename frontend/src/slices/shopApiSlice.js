@@ -1,11 +1,10 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiSlice } from "./apiSlice";
 
-export const shopApi = createApi({
-  reducerPath: "shopApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api" }),
+export const shopApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    // Fetch shop products
     getShopProducts: builder.query({
-      query: () => "/shop",
+      query: () => "/shop", // GET /api/shop
       transformResponse: (response) => {
         const allProducts = response;
         const lowStockProducts = response.filter(
@@ -14,6 +13,7 @@ export const shopApi = createApi({
         return { allProducts, lowStockProducts };
       },
     }),
+    // Add new shop item
     addToShop: builder.mutation({
       query: (newShopItem) => ({
         url: "/shop",
@@ -21,7 +21,7 @@ export const shopApi = createApi({
         body: newShopItem,
       }),
     }),
-    // Add mutation for updating a product
+    // Update a product
     updateProduct: builder.mutation({
       query: ({ id, updatedProduct }) => ({
         url: `/shop/${id}`,
@@ -29,7 +29,7 @@ export const shopApi = createApi({
         body: updatedProduct,
       }),
     }),
-    // Add mutation for deleting a product
+    // Delete a product
     deleteProduct: builder.mutation({
       query: (id) => ({
         url: `/shop/${id}`,
@@ -41,7 +41,7 @@ export const shopApi = createApi({
 
 export const {
   useGetShopProductsQuery,
+  useAddToShopMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
-  useAddToShopMutation,
 } = shopApi;

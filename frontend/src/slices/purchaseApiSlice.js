@@ -1,10 +1,7 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiSlice } from "./apiSlice"; // Reuse the base configuration from apiSlice
 
 // Define the API slice for purchases
-export const purchaseApiSlice = createApi({
-  reducerPath: "purchaseApi", // Unique key to reference the API in the store
-  baseQuery: fetchBaseQuery({ baseUrl: "/api" }), // Base URL for API calls
-  tagTypes: ["Purchase"], // Optional, used for cache invalidation
+export const purchaseApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Fetch purchases by date range
     getPurchasesByDateRange: builder.query({
@@ -14,7 +11,6 @@ export const purchaseApiSlice = createApi({
         if (endDate) params.append("endDate", endDate);
         return {
           url: `purchases?${params.toString()}`, // GET /api/purchases?startDate=...&endDate=...
-          method: "GET",
         };
       },
       providesTags: ["Purchase"],
