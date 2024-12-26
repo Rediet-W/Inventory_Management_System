@@ -15,7 +15,7 @@ export const summaryApiSlice = apiSlice.injectEndpoints({
     // Fetch purchases within a date range
     getPurchasesByDateRange: builder.query({
       query: ({ startDate, endDate }) => {
-        let url = "/api/purchases/range";
+        let url = "/api/purchases/";
         const params = new URLSearchParams();
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);

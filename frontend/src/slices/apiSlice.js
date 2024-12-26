@@ -6,9 +6,7 @@ const baseQuery = fetchBaseQuery({
   baseUrl: backendUrl,
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
-    // Retrieve userInfo from the Redux state
     const userInfo = getState().auth.userInfo;
-    console.log("Redux User Info:", getState().auth.userInfo);
     // If a token exists in userInfo, set it in the Authorization header
     if (userInfo?.token) {
       headers.set("Authorization", `Bearer ${userInfo.token}`);
