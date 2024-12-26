@@ -5,7 +5,7 @@ export const summaryApiSlice = apiSlice.injectEndpoints({
     // Fetch sales within a date range
     getSalesByDateRange: builder.query({
       query: ({ startDate, endDate }) => {
-        let url = "/sales/range";
+        let url = "/api/sales/range";
         const params = new URLSearchParams();
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);
@@ -15,7 +15,7 @@ export const summaryApiSlice = apiSlice.injectEndpoints({
     // Fetch purchases within a date range
     getPurchasesByDateRange: builder.query({
       query: ({ startDate, endDate }) => {
-        let url = "/purchases/range";
+        let url = "/api/purchases/range";
         const params = new URLSearchParams();
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);

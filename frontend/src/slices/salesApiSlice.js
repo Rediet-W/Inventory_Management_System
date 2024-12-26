@@ -3,31 +3,31 @@ import { apiSlice } from "./apiSlice";
 export const salesApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAllSales: builder.query({
-      query: () => "/sales",
+      query: () => "/api/sales",
     }),
     getSalesByDate: builder.query({
-      query: (date) => `/sales/date?date=${date}`,
+      query: (date) => `/api/sales/date?date=${date}`,
     }),
     addSale: builder.mutation({
       query: (saleData) => ({
-        url: "/sales",
+        url: "/api/sales",
         method: "POST",
         body: saleData,
       }),
     }),
     deleteSale: builder.mutation({
       query: (saleId) => ({
-        url: `/sales/${saleId}`,
+        url: `/api/sales/${saleId}`,
         method: "DELETE",
       }),
     }),
     getSalesByDateRange: builder.query({
       query: ({ startDate, endDate }) =>
-        `/sales/range?startDate=${startDate}&endDate=${endDate}`,
+        `/api/sales/range?startDate=${startDate}&endDate=${endDate}`,
     }),
     editSale: builder.mutation({
       query: ({ saleId, saleData }) => ({
-        url: `/sales/${saleId}`,
+        url: `/api/sales/${saleId}`,
         method: "PUT",
         body: saleData,
       }),

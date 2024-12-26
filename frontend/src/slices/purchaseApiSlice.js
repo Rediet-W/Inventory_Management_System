@@ -10,7 +10,7 @@ export const purchaseApiSlice = apiSlice.injectEndpoints({
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);
         return {
-          url: `purchases?${params.toString()}`, // GET /api/purchases?startDate=...&endDate=...
+          url: `/api/purchases?${params.toString()}`, // GET /api/purchases?startDate=...&endDate=...
         };
       },
       providesTags: ["Purchase"],
@@ -19,7 +19,7 @@ export const purchaseApiSlice = apiSlice.injectEndpoints({
     // Create a new purchase
     createPurchase: builder.mutation({
       query: (newPurchase) => ({
-        url: "purchases",
+        url: "/api/purchases",
         method: "POST",
         body: newPurchase,
       }),
@@ -29,7 +29,7 @@ export const purchaseApiSlice = apiSlice.injectEndpoints({
     // Delete a purchase by ID
     deletePurchase: builder.mutation({
       query: (purchaseId) => ({
-        url: `purchases/${purchaseId}`,
+        url: `/api/purchases/${purchaseId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Purchase"], // Invalidates cache to refetch purchases

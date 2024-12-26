@@ -4,7 +4,7 @@ export const shopApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Fetch shop products
     getShopProducts: builder.query({
-      query: () => "/shop", // GET /api/shop
+      query: () => "api/shop", // GET /api/shop
       transformResponse: (response) => {
         const allProducts = response;
         const lowStockProducts = response.filter(
@@ -16,7 +16,7 @@ export const shopApi = apiSlice.injectEndpoints({
     // Add new shop item
     addToShop: builder.mutation({
       query: (newShopItem) => ({
-        url: "/shop",
+        url: "/api/shop",
         method: "POST",
         body: newShopItem,
       }),
@@ -24,7 +24,7 @@ export const shopApi = apiSlice.injectEndpoints({
     // Update a product
     updateProduct: builder.mutation({
       query: ({ id, updatedProduct }) => ({
-        url: `/shop/${id}`,
+        url: `/api/shop/${id}`,
         method: "PUT",
         body: updatedProduct,
       }),
@@ -32,7 +32,7 @@ export const shopApi = apiSlice.injectEndpoints({
     // Delete a product
     deleteProduct: builder.mutation({
       query: (id) => ({
-        url: `/shop/${id}`,
+        url: `/api/shop/${id}`,
         method: "DELETE",
       }),
     }),
