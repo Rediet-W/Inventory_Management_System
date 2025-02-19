@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
-import refreshReducer from "./slices/refreshSlice"; // Import refreshReducer
+import refreshReducer from "./slices/refreshSlice";
 import { apiSlice } from "./slices/apiSlice";
 import { productApiSlice } from "./slices/productApiSlice";
 import { requestedProductApiSlice } from "./slices/requestedProductApiSlice";

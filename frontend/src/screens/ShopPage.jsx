@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   useGetShopProductsQuery,
-  useUpdateProductMutation,
+  useUpdateProductInShopMutation,
   useDeleteProductMutation,
 } from "../slices/shopApiSlice";
 import {
@@ -14,19 +14,26 @@ import {
   Row,
   Col,
   Pagination,
+  Alert,
 } from "react-bootstrap";
 import SearchBar from "../components/SearchBar";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
 import { format } from "date-fns";
-import { triggerRefresh } from "../slices/refreshSlice"; // Import refresh trigger
-
+import { triggerRefresh } from "../slices/refreshSlice";
+import moment from "moment";
 const ShopPage = () => {
   const dispatch = useDispatch();
   const refreshKey = useSelector((state) => state.refresh.refreshKey);
-  const { data, error, isLoading, refetch } = useGetShopProductsQuery();
-  const [deleteProduct] = useDeleteProductMutation();
-  const [updateProduct] = useUpdateProductMutation();
+
+  const today = moment().format("YYYY-MM-DD");
+  const lastWeek = moment().subtract(7, "days").format("YYYY-MM-DD");
+
+  const { data, error, isLoading, refetch } = useGetShopProductsQuery({});
+
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+  const [updateProduct, { isLoading: isUpdating }] =
+    useUpdateProductInShopMutation();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState("product_name");
@@ -35,16 +42,17 @@ const ShopPage = () => {
 
   const [editingProduct, setEditingProduct] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   useEffect(() => {
-    refetch(); // Re-fetch data on refreshKey change
+    refetch();
   }, [refreshKey, refetch]);
 
   if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading products</div>;
+  if (error) return <Alert variant="danger">Error loading products</Alert>;
 
   // Handle delete product
   const handleDelete = async (id) => {
@@ -52,32 +60,38 @@ const ShopPage = () => {
       try {
         await deleteProduct(id).unwrap();
         alert("Product deleted successfully!");
-        dispatch(triggerRefresh()); // Trigger refresh after deletion
+        dispatch(triggerRefresh());
       } catch (error) {
-        console.error("Failed to delete product", error);
-        alert("Failed to delete product");
+        console.error("❌ Failed to delete product", error);
+        setErrorMessage(error.data?.message || "Failed to delete product");
       }
     }
   };
 
-  // Handle edit product
   const handleEdit = (product) => {
     setEditingProduct(product);
     setShowEditModal(true);
   };
 
-  // Handle save after editing
   const handleSave = async () => {
+    console.log(editingProduct);
     try {
       await updateProduct({
         id: editingProduct.id,
-        updatedProduct: editingProduct,
+        updatedProduct: {
+          product_name: editingProduct.product_name,
+          batch_number: editingProduct.batch_number,
+          selling_price: parseFloat(editingProduct.selling_price),
+          quantity: parseFloat(editingProduct.quantity),
+        },
       }).unwrap();
-      alert("Product updated successfully!");
-      dispatch(triggerRefresh()); // Trigger refresh after update
+
+      alert("✅ Product updated successfully!");
+      dispatch(triggerRefresh());
       setShowEditModal(false);
     } catch (error) {
-      console.error("Failed to update product", error);
+      console.error("❌ Failed to update product", error);
+      setErrorMessage(error.data?.message || "Failed to update product");
     }
   };
 
@@ -85,7 +99,7 @@ const ShopPage = () => {
   const filteredProducts = (products) => {
     return products.filter((product) => {
       const searchField =
-        searchType === "productName"
+        searchType === "product_name"
           ? product.product_name
           : product.batch_number;
       return searchField.toLowerCase().includes(searchQuery.toLowerCase());
@@ -118,6 +132,8 @@ const ShopPage = () => {
 
   return (
     <div className="container mt-4">
+      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+
       <Row className="align-items-center mb-4">
         <Col md={6}>
           <h2>Shop Products</h2>
@@ -161,27 +177,71 @@ const ShopPage = () => {
             <Modal.Title>Edit Product</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Form.Group controlId="productName">
-              <Form.Label>Product Name</Form.Label>
-              <Form.Control
-                type="text"
-                value={editingProduct.product_name}
-                onChange={(e) =>
-                  setEditingProduct({
-                    ...editingProduct,
-                    product_name: e.target.value,
-                  })
-                }
-              />
-            </Form.Group>
-            {/* Additional fields for editing product */}
+            <Form>
+              <Form.Group controlId="productName">
+                <Form.Label>Product Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={editingProduct.product_name}
+                  onChange={(e) =>
+                    setEditingProduct({
+                      ...editingProduct,
+                      product_name: e.target.value,
+                    })
+                  }
+                />
+              </Form.Group>
+              <Form.Group controlId="batchNumber">
+                <Form.Label>Batch Number</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={editingProduct.batch_number}
+                  onChange={(e) =>
+                    setEditingProduct({
+                      ...editingProduct,
+                      batch_number: e.target.value,
+                    })
+                  }
+                />
+              </Form.Group>
+              <Form.Group controlId="sellingPrice">
+                <Form.Label>Selling Price</Form.Label>
+                <Form.Control
+                  type="number"
+                  value={editingProduct.selling_price}
+                  onChange={(e) =>
+                    setEditingProduct({
+                      ...editingProduct,
+                      selling_price: e.target.value,
+                    })
+                  }
+                />
+              </Form.Group>
+              <Form.Group controlId="quantity">
+                <Form.Label>Quantity</Form.Label>
+                <Form.Control
+                  type="number"
+                  value={editingProduct.quantity}
+                  onChange={(e) =>
+                    setEditingProduct({
+                      ...editingProduct,
+                      quantity: e.target.value,
+                    })
+                  }
+                />
+              </Form.Group>
+            </Form>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowEditModal(false)}>
               Close
             </Button>
-            <Button variant="primary" onClick={handleSave}>
-              Save Changes
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              disabled={isUpdating}
+            >
+              {isUpdating ? "Saving..." : "Save Changes"}
             </Button>
           </Modal.Footer>
         </Modal>
@@ -192,7 +252,7 @@ const ShopPage = () => {
 
 const renderTable = (products, handleDelete, userInfo, handleEdit) => {
   if (!products || products.length === 0) {
-    return <div>No products available</div>;
+    return <Alert variant="warning">No products available</Alert>;
   }
 
   return (

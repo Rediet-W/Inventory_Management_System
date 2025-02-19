@@ -11,7 +11,6 @@ const App = () => {
     <>
       <Header />
 
-      {/* <Layout /> */}
       <ToastContainer />
       <div className="d-flex">
         <Sidebar />

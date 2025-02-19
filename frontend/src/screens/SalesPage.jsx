@@ -7,7 +7,7 @@ import {
 } from "../slices/salesApiSlice";
 import { useGetShopProductsQuery } from "../slices/shopApiSlice";
 import { useSelector, useDispatch } from "react-redux";
-import { triggerRefresh } from "../slices/refreshSlice"; // Import refresh trigger
+import { triggerRefresh } from "../slices/refreshSlice";
 import {
   Container,
   Row,
@@ -17,7 +17,6 @@ import {
   Button,
   Form,
   Alert,
-  Modal,
   Pagination,
 } from "react-bootstrap";
 import { format } from "date-fns";
@@ -26,6 +25,7 @@ const SalesPage = () => {
   const dispatch = useDispatch();
   const refreshKey = useSelector((state) => state.refresh.refreshKey);
   const { userInfo } = useSelector((state) => state.auth);
+
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [saleDate, setSaleDate] = useState(
@@ -33,14 +33,14 @@ const SalesPage = () => {
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [showShopModal, setShowShopModal] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const { data: shopProducts } = useGetShopProductsQuery();
-
-  const { data: sales, refetch } = useGetSalesByDateQuery(saleDate);
+  const { data: shopProducts = { allProducts: [] } } =
+    useGetShopProductsQuery();
+  const { data: sales = [], refetch } = useGetSalesByDateQuery(saleDate, {
+    skip: !saleDate,
+  });
 
   const [addSale] = useAddSaleMutation();
   const [deleteSale] = useDeleteSaleMutation();
@@ -52,9 +52,18 @@ const SalesPage = () => {
 
   const handleAddSale = async () => {
     setErrorMessage("");
-    if (!selectedProduct || quantity <= 0) return;
 
-    const productExists = shopProducts?.allProducts?.some(
+    if (!selectedProduct) {
+      setErrorMessage("Please select a product.");
+      return;
+    }
+
+    if (!quantity || isNaN(quantity) || quantity <= 0) {
+      setErrorMessage("Quantity must be greater than 0.");
+      return;
+    }
+
+    const productExists = shopProducts.allProducts.some(
       (product) => product.id === selectedProduct.id
     );
 
@@ -67,7 +76,7 @@ const SalesPage = () => {
 
     if (quantity > selectedProduct.quantity) {
       setErrorMessage(
-        `Cannot sell more than available in stock. Available: ${selectedProduct.quantity}`
+        `Can't sell more than available in shop (${selectedProduct.quantity} units).`
       );
       return;
     }
@@ -78,8 +87,9 @@ const SalesPage = () => {
         quantity_sold: quantity,
         user_name: userInfo?.name,
       }).unwrap();
+
       alert("Sale added successfully");
-      dispatch(triggerRefresh()); // Trigger global refresh
+      dispatch(triggerRefresh());
       setSelectedProduct(null);
       setQuantity(1);
     } catch (error) {
@@ -87,53 +97,53 @@ const SalesPage = () => {
     }
   };
 
-  // Handle editing sale
   const handleEdit = (sale) => {
     const newQuantity = prompt(
       "Enter new quantity for the sale:",
       sale.quantity_sold
     );
-    if (newQuantity && newQuantity > 0) {
-      editSale({
-        saleId: sale.id,
-        saleData: { quantitySold: newQuantity },
-      })
+    if (newQuantity && !isNaN(newQuantity) && newQuantity > 0) {
+      editSale({ saleId: sale.id, saleData: { quantitySold: newQuantity } })
         .unwrap()
         .then(() => {
           alert("Sale updated successfully");
-          dispatch(triggerRefresh()); // Trigger global refresh
+          dispatch(triggerRefresh());
         })
-        .catch((error) => alert("Error updating sale"));
+        .catch(() => alert("Error updating sale"));
     }
   };
 
-  // Handle deleting sale
   const handleDelete = async (saleId) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this sale? This action cannot be undone and the sale will not be added back to the shop."
-    );
-
-    if (confirmDelete) {
+    if (window.confirm("Are you sure you want to delete this sale?")) {
       try {
         await deleteSale(saleId).unwrap();
         alert("Sale deleted successfully");
-        dispatch(triggerRefresh()); // Trigger global refresh
+        dispatch(triggerRefresh());
       } catch (error) {
         alert("Error deleting sale");
       }
     }
   };
 
-  // Handle product search
   const handleSearch = (e) => {
     const searchValue = e.target.value.toLowerCase();
+    setSearchResults([]);
+
+    if (searchValue.trim() === "") {
+      setSearchResults([]);
+      return;
+    }
+
     const results = shopProducts?.allProducts?.filter((product) =>
       product.product_name.toLowerCase().includes(searchValue)
     );
+
     setSearchResults(results);
   };
+  useEffect(() => {
+    setSelectedProduct(null);
+  }, [searchResults]);
 
-  // Calculate total sales for the selected date
   const totalSalesETB = useMemo(() => {
     return sales?.reduce(
       (total, sale) => total + sale.selling_price * sale.quantity_sold,
@@ -141,7 +151,6 @@ const SalesPage = () => {
     );
   }, [sales]);
 
-  // Sort and paginate sales data
   const sortedSales = sales
     ?.slice()
     .sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date));
@@ -149,8 +158,6 @@ const SalesPage = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentSales = sortedSales?.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil((sortedSales?.length || 0) / itemsPerPage);
-
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <Container className="mt-4">
@@ -176,13 +183,12 @@ const SalesPage = () => {
         </Col>
       </Row>
 
-      {userInfo?.role !== "admin" && (
+      {userInfo?.role == "user" && (
         <Row className="justify-content-center mb-4">
           <Col md={8}>
             <Card className="shadow-sm">
               <Card.Body>
                 <h2 className="text-center mb-4">Add Sale</h2>
-
                 {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
                 <Form.Group className="mb-3">
@@ -193,20 +199,20 @@ const SalesPage = () => {
                   />
                 </Form.Group>
 
-                {/* Display search results */}
-                {searchResults?.map((product) => (
-                  <div
-                    key={product.id}
-                    onClick={() => setSelectedProduct(product)}
-                    style={{
-                      cursor: "pointer",
-                      borderBottom: "1px solid #ddd",
-                      padding: "5px",
-                    }}
-                  >
-                    {product.product_name}
-                  </div>
-                ))}
+                {!selectedProduct &&
+                  searchResults?.map((product) => (
+                    <div
+                      key={product.id}
+                      onClick={() => setSelectedProduct(product)}
+                      style={{
+                        cursor: "pointer",
+                        borderBottom: "1px solid #ddd",
+                        padding: "5px",
+                      }}
+                    >
+                      {product.product_name}
+                    </div>
+                  ))}
 
                 {selectedProduct && (
                   <div className="selected-product-info mt-3">
@@ -222,29 +228,21 @@ const SalesPage = () => {
                       <strong>Selling Price:</strong>{" "}
                       {selectedProduct?.selling_price} ETB
                     </p>
+
                     <Form.Group controlId="quantity" className="mb-3">
                       <Form.Label>Quantity</Form.Label>
                       <Form.Control
                         type="number"
                         min="1"
-                        max={selectedProduct.quantity}
                         value={quantity}
                         onChange={(e) => setQuantity(e.target.value)}
                       />
                     </Form.Group>
 
-                    {quantity > selectedProduct.quantity && (
-                      <Alert variant="warning">
-                        Quantity entered exceeds available stock (
-                        {selectedProduct.quantity} units available).
-                      </Alert>
-                    )}
-
                     <Button
                       className="w-100"
                       variant="primary"
                       onClick={handleAddSale}
-                      disabled={quantity > selectedProduct.quantity}
                     >
                       Add Sale
                     </Button>
@@ -255,7 +253,6 @@ const SalesPage = () => {
           </Col>
         </Row>
       )}
-
       <Row className="justify-content-center mb-4">
         <Col md={8}>
           <Form.Group className="text-center">
@@ -269,7 +266,6 @@ const SalesPage = () => {
           </Form.Group>
         </Col>
       </Row>
-
       <Row className="justify-content-center">
         <Col md={10}>
           <Table striped bordered hover className="shadow-sm">
@@ -346,36 +342,6 @@ const SalesPage = () => {
           </Pagination>
         </Col>
       </Row>
-
-      {/* <Button variant="link" onClick={() => setShowShopModal(true)}>
-        View Shop Products
-      </Button>
-
-      <Modal show={showShopModal} onHide={() => setShowShopModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Shop Products</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th>Product Name</th>
-                <th>Available Stock</th>
-                <th>Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shopProducts?.allProducts?.map((product) => (
-                <tr key={product.id}>
-                  <td>{product.product_name}</td>
-                  <td>{product.quantity}</td>
-                  <td>{product.selling_price} ETB</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Modal.Body>
-      </Modal> */}
     </Container>
   );
 };

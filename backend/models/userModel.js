@@ -17,7 +17,7 @@ const User = sequelize.define(
     email: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      unique: true, // Ensure email is unique
+      unique: true,
     },
     password: {
       type: DataTypes.STRING(255),
@@ -25,16 +25,16 @@ const User = sequelize.define(
     },
     role: {
       type: DataTypes.ENUM("user", "admin", "superadmin"),
-      defaultValue: "user", // Default role is 'user'
+      defaultValue: "user",
       allowNull: false,
     },
     is_primary_admin: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false, // Default value for is_primary_admin is false
+      defaultValue: false,
     },
   },
   {
-    timestamps: true, // Automatically handle created_at and updated_at
+    timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
   }

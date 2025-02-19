@@ -1,98 +1,127 @@
 import asyncHandler from "express-async-handler";
-import Purchase from "../models/purchaseModel.js";
-import Product from "../models/productModel.js";
-import { Op } from "sequelize"; // Import Sequelize operators
+import * as purchaseService from "../services/purchaseService.js";
+
+const sendResponse = (res, success, message, data = null, errors = []) => {
+  res.status(success ? 200 : 400).json({ success, message, data, errors });
+};
 
 // @desc    Create a new purchase
 // @route   POST /api/purchases
-// @access  Private (admin only)
-const createPurchase = asyncHandler(async (req, res) => {
-  const { productId, quantity, buyingPrice, purchaseDate, userName } = req.body;
+// @access  Private (Admin only)
+export const createPurchase = asyncHandler(async (req, res) => {
+  try {
+    const { productId, quantity, buyingPrice, purchaseDate } = req.body;
+    const errors = [];
 
-  const product = await Product.findByPk(productId); // Use Sequelize to find product by ID
+    // Input validation
+    if (!productId) errors.push("Product ID is required");
+    if (!quantity || isNaN(quantity) || quantity <= 0)
+      errors.push("Quantity must be a valid number greater than 0");
+    if (!buyingPrice || isNaN(buyingPrice) || buyingPrice <= 0)
+      errors.push("Buying price must be a valid number greater than 0");
+    if (!purchaseDate) errors.push("Purchase date is required");
 
-  if (!product) {
-    res.status(404).json({ message: "Product not found" });
-    return;
+    if (errors.length > 0) {
+      return sendResponse(res, false, "Invalid purchase input", null, errors);
+    }
+
+    const purchase = await purchaseService.createPurchase(req.body);
+
+    if (purchase) {
+      sendResponse(res, true, "Purchase created successfully", purchase);
+    } else {
+      sendResponse(res, false, "Product not found", null, [
+        "Invalid product ID",
+      ]);
+    }
+  } catch (error) {
+    console.error(" Error creating purchase:", error);
+    sendResponse(res, false, "Failed to create purchase", null, [
+      error.message,
+    ]);
   }
-
-  // Create a new purchase
-  const purchase = await Purchase.create({
-    product_id: productId,
-    product_name: product.name,
-    quantity,
-    buying_price: buyingPrice,
-    purchase_date: purchaseDate,
-    user_name: userName,
-  });
-
-  // Update the product quantity
-  product.quantity += quantity;
-  await product.save();
-
-  res.status(201).json({ message: "Purchase created successfully", purchase });
 });
 
-// @desc    Get all purchases (optionally filter by date range)
+// @desc    Get all purchases (with optional date filtering)
 // @route   GET /api/purchases
-// @access  Private
-const getAllPurchases = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
+// @access  Private (Authenticated users)
+export const getAllPurchases = asyncHandler(async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const errors = [];
 
-  // Prepare where clause for filtering by date
-  const whereClause = {};
+    if ((startDate && !endDate) || (!startDate && endDate)) {
+      errors.push(
+        "Both startDate and endDate are required together for filtering"
+      );
+    }
 
-  if (startDate && endDate) {
-    whereClause.purchase_date = {
-      [Op.between]: [
-        new Date(startDate).setHours(0, 0, 0, 0), // Start of the day
-        new Date(endDate).setHours(23, 59, 59, 999), // End of the day
-      ],
-    };
+    if (errors.length > 0) {
+      return sendResponse(res, false, "Invalid date range", null, errors);
+    }
+
+    const purchases = await purchaseService.getAllPurchases(startDate, endDate);
+    sendResponse(res, true, "Purchases retrieved successfully", purchases);
+  } catch (error) {
+    console.error("Error fetching purchases:", error);
+    sendResponse(res, false, "Failed to retrieve purchases", null, [
+      error.message,
+    ]);
   }
-
-  // Fetch purchases with optional date filtering
-  const purchases = await Purchase.findAll({
-    where: whereClause,
-  });
-
-  res.status(200).json(purchases);
 });
 
-// @desc    Get purchase by ID
+// @desc    Get a single purchase by ID
 // @route   GET /api/purchases/:id
-// @access  Private
-const getPurchaseById = asyncHandler(async (req, res) => {
-  const purchase = await Purchase.findByPk(req.params.id);
+// @access  Private (Authenticated users)
+export const getPurchaseById = asyncHandler(async (req, res) => {
+  try {
+    const purchaseId = req.params.id;
+    if (!purchaseId) {
+      return sendResponse(res, false, "Purchase ID is required", null, [
+        "Missing purchase ID",
+      ]);
+    }
 
-  if (!purchase) {
-    res.status(404).json({ message: "Purchase not found" });
-  } else {
-    res.status(200).json(purchase);
+    const purchase = await purchaseService.getPurchaseById(purchaseId);
+    if (purchase) {
+      sendResponse(res, true, "Purchase retrieved successfully", purchase);
+    } else {
+      sendResponse(res, false, "Purchase not found", null, [
+        "Invalid purchase ID",
+      ]);
+    }
+  } catch (error) {
+    console.error("Error fetching purchase:", error);
+    sendResponse(res, false, "Failed to retrieve purchase", null, [
+      error.message,
+    ]);
   }
 });
 
-// @desc    Delete a purchase
+// @desc    Delete a purchase by ID
 // @route   DELETE /api/purchases/:id
-// @access  Private (admin only)
-const deletePurchase = asyncHandler(async (req, res) => {
-  const purchase = await Purchase.findByPk(req.params.id);
+// @access  Private (Admin only)
+export const deletePurchase = asyncHandler(async (req, res) => {
+  try {
+    const purchaseId = req.params.id;
+    if (!purchaseId) {
+      return sendResponse(res, false, "Purchase ID is required", null, [
+        "Missing purchase ID",
+      ]);
+    }
 
-  if (!purchase) {
-    res.status(404).json({ message: "Purchase not found" });
-    return;
+    const result = await purchaseService.deletePurchase(purchaseId);
+    if (result) {
+      sendResponse(res, true, "Purchase deleted successfully");
+    } else {
+      sendResponse(res, false, "Purchase not found", null, [
+        "Invalid purchase ID",
+      ]);
+    }
+  } catch (error) {
+    console.error("Error deleting purchase:", error);
+    sendResponse(res, false, "Failed to delete purchase", null, [
+      error.message,
+    ]);
   }
-
-  const product = await Product.findByPk(purchase.product_id);
-
-  if (product) {
-    product.quantity -= purchase.quantity;
-    await product.save();
-  }
-
-  await purchase.destroy(); // Delete the purchase
-
-  res.json({ message: "Purchase deleted successfully" });
 });
-
-export { createPurchase, getAllPurchases, getPurchaseById, deletePurchase };

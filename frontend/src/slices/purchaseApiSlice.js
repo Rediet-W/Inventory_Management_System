@@ -7,31 +7,55 @@ export const purchaseApiSlice = apiSlice.injectEndpoints({
     getPurchasesByDateRange: builder.query({
       query: ({ startDate, endDate }) =>
         `/api/purchases?startDate=${startDate}&endDate=${endDate}`,
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error("❌ Failed to fetch purchases:", response.message);
+          throw new Error(response.message || "Error fetching purchases");
+        }
+        return response.data;
+      },
       providesTags: ["Purchase"],
     }),
 
-    // Create a new purchase
     createPurchase: builder.mutation({
       query: (newPurchase) => ({
         url: "/api/purchases",
         method: "POST",
         body: newPurchase,
       }),
-      invalidatesTags: ["Purchase"], // Invalidates cache to refetch purchases
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error(
+            "❌ Purchase creation failed:",
+            response.errors || response.message
+          );
+          throw new Error(response.message || "Purchase creation failed");
+        }
+        return response.data;
+      },
+      invalidatesTags: ["Purchase"],
     }),
 
-    // Delete a purchase by ID
     deletePurchase: builder.mutation({
       query: (purchaseId) => ({
         url: `/api/purchases/${purchaseId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Purchase"], // Invalidates cache to refetch purchases
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error(
+            `❌ Failed to delete purchase ${purchaseId}:`,
+            response.message
+          );
+          throw new Error(response.message || "Error deleting purchase");
+        }
+        return response.data;
+      },
+      invalidatesTags: ["Purchase"],
     }),
   }),
 });
 
-// Export the auto-generated hooks for the API slice
 export const {
   useGetPurchasesByDateRangeQuery,
   useCreatePurchaseMutation,

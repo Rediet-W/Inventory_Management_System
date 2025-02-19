@@ -1,33 +1,30 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
 
-// Load environment variables
 dotenv.config({ path: "./.env" });
 
 const sequelize = new Sequelize(
-  process.env.DB_NAME || "inventory_management",
-  process.env.DB_USER || "root",
-  process.env.DB_PASSWORD || "",
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
   {
-    host: process.env.DB_HOST || "localhost",
-    port: parseInt(process.env.DB_PORT) || 3306, // Explicitly parse the port as an integer
-    port: parseInt(process.env.DB_PORT) || 3306, // Explicitly parse the port as an integer
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT),
+    port: parseInt(process.env.DB_PORT),
     dialect: "mysql",
     pool: {
       max: 5,
       min: 0,
-      acquire: 60000, // Increased timeout
-      acquire: 60000, // Increased timeout
+      acquire: 60000,
       idle: 10000,
     },
     dialectOptions: {
-      connectTimeout: 60000, // Increased connection timeout
+      connectTimeout: 60000,
     },
-    logging: console.log, // Enable detailed logging
+    logging: console.log,
     dialectOptions: {
-      connectTimeout: 60000, // Increased connection timeout
+      connectTimeout: 60000,
     },
-    logging: console.log, // Enable detailed logging
   }
 );
 

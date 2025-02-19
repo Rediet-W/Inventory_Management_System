@@ -28,10 +28,23 @@ const LoginScreen = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     try {
+      console.log("📤 Sending Login Request with:", { email, password });
+
       const res = await login({ email, password }).unwrap();
-      dispatch(setCredentials({ ...res }));
+      console.log("✅ Login Response:", res);
+
+      if (!res.token) {
+        console.error("❌ No token received in response:", res);
+        toast.error("Login failed. No token received.");
+        return;
+      }
+
+      dispatch(setCredentials({ success: true, data: res }));
+      console.log("🚀 Dispatched setCredentials:", res);
+
       navigate("/");
     } catch (err) {
+      console.error("❌ Login Failed:", err?.data?.message || err.error);
       toast.error(err?.data?.message || err.error);
     }
   };

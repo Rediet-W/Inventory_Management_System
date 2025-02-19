@@ -86,7 +86,7 @@ const HomePage = () => {
       <Row className="align-items-center text-center">
         <Col md={6}>
           <img
-            src="/image.png"
+            src="/logo.png"
             alt="Shop Logo"
             style={{
               width: "150px",
@@ -108,9 +108,7 @@ const HomePage = () => {
             <HomeTop />
           </Row>
           <Row className="mb-4">
-            <Col md={5}>
-              <SalesCalendar />{" "}
-            </Col>
+            <Col md={5}>{/* <SalesCalendar />{" "} */}</Col>
             <Col md={7}>
               <Card className="text-center shadow-lg border-0">
                 <Card.Body>

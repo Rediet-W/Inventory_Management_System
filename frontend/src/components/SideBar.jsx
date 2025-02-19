@@ -147,17 +147,18 @@ const Sidebar = () => {
                     {!isCollapsed && <span>Store</span>}
                   </Link>
                 </li>
-
-                <li className="nav-item">
-                  <Link
-                    to="/employees"
-                    className="nav-link text-light d-flex align-items-center"
-                    style={{ padding: "10px" }}
-                  >
-                    <FaUserFriends className="me-2" />
-                    {!isCollapsed && <span>Employees</span>}
-                  </Link>
-                </li>
+                {userInfo?.isPrimaryAdmin && (
+                  <li className="nav-item">
+                    <Link
+                      to="/employees"
+                      className="nav-link text-light d-flex align-items-center"
+                      style={{ padding: "10px" }}
+                    >
+                      <FaUserFriends className="me-2" />
+                      {!isCollapsed && <span>Employees</span>}
+                    </Link>
+                  </li>
+                )}
 
                 <li className="nav-item">
                   <Link
@@ -178,6 +179,17 @@ const Sidebar = () => {
                   >
                     <FaChartLine className="me-2" />
                     {!isCollapsed && <span>Report</span>}
+                  </Link>
+                </li>
+
+                <li className="nav-item">
+                  <Link
+                    to="/analysis"
+                    className="nav-link text-light d-flex align-items-center"
+                    style={{ padding: "10px" }}
+                  >
+                    <FaChartLine className="me-2" />
+                    {!isCollapsed && <span>Analysis</span>}
                   </Link>
                 </li>
               </>

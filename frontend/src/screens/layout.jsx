@@ -25,7 +25,7 @@ const Layout = ({ children }) => {
       {isSidebarOpen && (
         <div
           className="sidebar-overlay d-block d-md-none"
-          onClick={() => setIsSidebarOpen(false)} // Close overlay on click outside
+          onClick={() => setIsSidebarOpen(false)}
         >
           <Sidebar />
         </div>

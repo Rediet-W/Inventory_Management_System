@@ -161,9 +161,9 @@ const SummaryPage = () => {
                   <tr>
                     <th>Date</th>
                     <th>Product Name</th>
-                    <th>Selling Price</th>
+                    <th>Selling Price per unit</th>
                     <th>Quantity Sold</th>
-                    <th>Amount</th>
+                    <th>Amount(ETB)</th>
                     <th>Sold By</th>
                   </tr>
                 </thead>
@@ -174,9 +174,9 @@ const SummaryPage = () => {
                         {sale?.sale_date?.split("T")[0] || "Unknown Date"}
                       </td>
                       <td>{sale.product_name || "Unknown Product"}</td>
-                      <td>{sale.selling_price} ETB</td>
+                      <td>{sale.selling_price} </td>
                       <td>{sale.quantity_sold}</td>
-                      <td>{sale.quantity_sold * sale.selling_price} ETB</td>
+                      <td>{sale.quantity_sold * sale.selling_price} </td>
                       <td>{sale.user_name || "Unknown"}</td>
                     </tr>
                   ))}
@@ -208,9 +208,9 @@ const SummaryPage = () => {
                   <tr>
                     <th>Date</th>
                     <th>Product Name</th>
-                    <th>Buying Price</th>
+                    <th>Buying Price per unit</th>
                     <th>Quantity</th>
-                    <th>Amount</th>
+                    <th>Amount(ETB)</th>
                     <th>Purchased By</th>
                   </tr>
                 </thead>
@@ -224,7 +224,7 @@ const SummaryPage = () => {
                       <td>{purchase.product_name || "Unknown Product"}</td>
                       <td>{purchase.buying_price} ETB</td>
                       <td>{purchase.quantity}</td>
-                      <td>{purchase.quantity * purchase.buying_price} ETB</td>
+                      <td>{purchase.quantity * purchase.buying_price} </td>
                       <td>{purchase.user_name || "Unknown"}</td>
                     </tr>
                   ))}

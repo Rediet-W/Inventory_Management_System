@@ -49,7 +49,6 @@ const ReportPage = () => {
       let heightLeft = imgHeight;
 
       // Add logo and header
-      // const logo = await loadImage("/path-to-logo/logo.png");
       pdf.addImage(logo, "PNG", 10, 10, 30, 30);
       pdf.setFontSize(14);
       pdf.setFont("helvetica", "bold");

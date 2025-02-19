@@ -24,6 +24,7 @@ import SalesPage from "./screens/SalesPage.jsx";
 import SummaryPage from "./screens/SummaryPage.jsx";
 import ReportPage from "./screens/ReportPage.jsx";
 import ShopPage from "./screens/ShopPage.jsx";
+import AnalysisPage from "./screens/AnalysisPage.jsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -40,6 +41,7 @@ const router = createBrowserRouter(
       <Route path="/store" element={<InventoryScreen />} />
       <Route path="/summary" element={<SummaryPage />} />
       <Route path="/report" element={<ReportPage />} />
+      <Route path="/analysis" element={<AnalysisPage />} />
     </Route>
   )
 );

@@ -1,202 +1,144 @@
 import asyncHandler from "express-async-handler";
-import Sale from "../models/saleModel.js";
-import Shop from "../models/shopModel.js";
-import { Op } from "sequelize";
+import * as saleService from "../services/saleService.js";
+
+const sendResponse = (res, success, message, data = null, errors = []) => {
+  res.status(success ? 200 : 400).json({ success, message, data, errors });
+};
+
+// @desc    Get all sales
+// @route   GET /api/sales
+// @access  Private (Authenticated users)
+export const getAllSales = asyncHandler(async (req, res) => {
+  try {
+    const sales = await saleService.getAllSales();
+    sendResponse(res, true, "Sales retrieved successfully", sales);
+  } catch (error) {
+    console.error("Error fetching sales:", error);
+    sendResponse(res, false, "Failed to retrieve sales", null, [error.message]);
+  }
+});
 
 // @desc    Get sales by date range
-// @route   GET /api/sales/range?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
-// @access  Private/User
-const getSalesByDateRange = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
+// @route   GET /api/sales/range
+// @access  Private (Authenticated users)
+export const getSalesByDateRange = asyncHandler(async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const errors = [];
 
-  // Validate the date inputs
-  if (!startDate || !endDate) {
-    return res
-      .status(400)
-      .json({ message: "Both startDate and endDate are required" });
+    if (!startDate) errors.push("Start date is required");
+    if (!endDate) errors.push("End date is required");
+
+    if (errors.length > 0) {
+      return sendResponse(
+        res,
+        false,
+        "Invalid date range request",
+        null,
+        errors
+      );
+    }
+
+    const sales = await saleService.getSalesByDateRange(startDate, endDate);
+    sendResponse(res, true, "Sales retrieved for date range", sales);
+  } catch (error) {
+    console.error("Error fetching sales by date range:", error);
+    sendResponse(res, false, "Failed to retrieve sales", null, [error.message]);
   }
-
-  const sales = await Sale.findAll({
-    where: {
-      sale_date: {
-        [Op.between]: [
-          new Date(startDate).setHours(0, 0, 0, 0), // Start of the day
-          new Date(endDate).setHours(23, 59, 59, 999), // End of the day
-        ],
-      },
-    },
-  });
-
-  res.status(200).json(sales);
 });
 
 // @desc    Get sales for a specific date
-// @route   GET /api/sales?date=YYYY-MM-DD
-// @access  Private/User
-const getSalesByDate = asyncHandler(async (req, res) => {
-  const { date } = req.query;
-
-  if (!date) {
-    res.status(400).json({ message: "Date is required" });
-    return;
-  }
-
-  const sales = await Sale.findAll({
-    where: {
-      sale_date: {
-        [Op.between]: [
-          new Date(date).setHours(0, 0, 0, 0),
-          new Date(date).setHours(23, 59, 59, 999),
-        ],
-      },
-    },
-  });
-
-  res.status(200).json(sales);
-});
-
-// @desc    Create a new sale and update shop product quantity
-// @route   POST /api/sales
-// @access  Private/User
-const createSale = asyncHandler(async (req, res) => {
-  const { product_id, quantity_sold, user_name } = req.body;
-
-  // Check if shopProductId is provided
-  if (!product_id || !quantity_sold || !user_name) {
-    res.status(400).json({
-      message: "Shop product ID, quantity sold, and user name are required.",
-    });
-    return;
-  }
-  // by productid we mean shop product id
-  // Find the product in the shop by ID (use the shop's 'id' not 'product_id')
-  const shopProduct = await Shop.findByPk(product_id); // Find the shop product by its 'id'
-  console.log(shopProduct, "shopProduct");
-  if (!shopProduct) {
-    res.status(404).json({ message: "Shop product not found" });
-    return;
-  }
-
-  // Check if there is enough stock in the shop for the sale
-  if (quantity_sold > shopProduct.quantity) {
-    res.status(400).json({
-      message: `Not enough stock available. Only ${shopProduct.quantity} units in stock.`,
-    });
-    return;
-  }
-
-  // Create a new sale
-  const saleData = {
-    product_id: shopProduct.id, // Link to the original product in the product table
-    product_name: shopProduct.product_name,
-    batch_number: shopProduct.batch_number,
-    quantity_sold: quantity_sold,
-    selling_price: shopProduct.selling_price,
-    user_name: user_name,
-    sale_date: new Date(),
-  };
-  console.log(saleData, "saleData");
-  const sale = await Sale.create(saleData);
-  console.log(sale, "ss");
-  // Update the shop product quantity after sale
-  const newQuantity = shopProduct.quantity - quantity_sold;
-  console.log(newQuantity, "new quantity");
-  if (newQuantity === 0) {
-    // If the stock is zero, remove the product from the shop
-    await shopProduct.destroy();
-  } else {
-    // Otherwise, update the shop product quantity
-    shopProduct.quantity = newQuantity;
-    await shopProduct.save();
-  }
-  console.log(shopProduct);
-
-  res.status(201).json(sale);
-});
-
-// @desc    Update a sale (edit quantity or other details)
-// @route   PUT /api/sales/:id
-// @access  Private/Admin
-const updateSale = asyncHandler(async (req, res) => {
-  const { quantitySold } = req.body;
-
-  // Find the sale entry by its ID
-  const sale = await Sale.findByPk(req.params.id);
-  if (!sale) {
-    return res.status(404).json({ message: "Sale not found" });
-  }
-
-  // Find the associated shop product by its ID
-  const shopProduct = await Shop.findByPk(sale.product_id);
-  if (!shopProduct) {
-    return res.status(404).json({ message: "Product not found in shop" });
-  }
-
-  // Calculate the quantity difference
-  const quantityDifference = quantitySold - sale.quantity_sold;
-
-  if (quantityDifference < 0) {
-    // Reducing quantity: add the difference back to shop inventory
-    shopProduct.quantity += Math.abs(quantityDifference);
-  } else if (quantityDifference > 0) {
-    // Increasing quantity: check if shop has enough stock
-    if (shopProduct.quantity < quantityDifference) {
-      return res.status(400).json({
-        message: `Not enough stock available to increase the sale. Only ${shopProduct.quantity} units in stock.`,
-      });
+// @route   GET /api/sales/date
+// @access  Private (Authenticated users)
+export const getSalesByDate = asyncHandler(async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return sendResponse(res, false, "Date is required", null, [
+        "Missing date query parameter",
+      ]);
     }
-    // Deduct the difference from shop inventory
-    shopProduct.quantity -= quantityDifference;
+
+    const sales = await saleService.getSalesByDate(date);
+    sendResponse(res, true, "Sales retrieved for the date", sales);
+  } catch (error) {
+    console.error("Error fetching sales by date:", error);
+    sendResponse(res, false, "Failed to retrieve sales", null, [error.message]);
   }
+});
 
-  // Save the updated shop product quantity
-  await shopProduct.save();
+// @desc    Create a sale
+// @route   POST /api/sales
+// @access  Private (Users)
+export const createSale = asyncHandler(async (req, res) => {
+  try {
+    const sale = await saleService.createSale(req.body);
+    if (sale?.error) {
+      return sendResponse(res, false, "Failed to create sale", null, [
+        sale.error,
+      ]);
+    }
 
-  // Update the sale entry with the new quantity
-  sale.quantity_sold = quantitySold;
-  await sale.save();
+    sendResponse(res, true, "Sale created successfully", sale);
+  } catch (error) {
+    console.error("Error creating sale:", error);
+    sendResponse(res, false, "Failed to create sale", null, [error.message]);
+  }
+});
 
-  res.status(200).json(sale);
+// @desc    Update a sale
+// @route   PATCH /api/sales/:id
+// @access  Private (Users/Admins)
+export const updateSale = asyncHandler(async (req, res) => {
+  try {
+    const { quantitySold } = req.body;
+    const saleId = req.params.id;
+    const errors = [];
+
+    if (!saleId) errors.push("Sale ID is required");
+    if (!quantitySold || isNaN(quantitySold) || quantitySold <= 0)
+      errors.push("Quantity must be a valid number greater than 0");
+
+    if (errors.length > 0) {
+      return sendResponse(res, false, "Invalid update input", null, errors);
+    }
+
+    const sale = await saleService.updateSale(saleId, quantitySold);
+    if (sale?.error) {
+      return sendResponse(res, false, "Sale update failed", null, [sale.error]);
+    } else if (!sale) {
+      return sendResponse(res, false, "Sale not found", null, [
+        "Invalid sale ID",
+      ]);
+    }
+
+    sendResponse(res, true, "Sale updated successfully", sale);
+  } catch (error) {
+    console.error("Error updating sale:", error);
+    sendResponse(res, false, "Failed to update sale", null, [error.message]);
+  }
 });
 
 // @desc    Delete a sale
 // @route   DELETE /api/sales/:id
-// @access  Private/Admin
-const deleteSale = asyncHandler(async (req, res) => {
-  console.log(req.params.id, "id");
-  const sale = await Sale.findByPk(req.params.id);
-  console.log(sale, "sale");
-  if (!sale) {
-    res.status(404).json({ message: "Sale not found" });
-    return;
+// @access  Private (Users/Admins)
+export const deleteSale = asyncHandler(async (req, res) => {
+  try {
+    const saleId = req.params.id;
+    if (!saleId) {
+      return sendResponse(res, false, "Sale ID is required", null, [
+        "Missing sale ID parameter",
+      ]);
+    }
+
+    const result = await saleService.deleteSale(saleId);
+    if (result) {
+      sendResponse(res, true, "Sale deleted successfully");
+    } else {
+      sendResponse(res, false, "Sale not found", null, ["Invalid sale ID"]);
+    }
+  } catch (error) {
+    console.error("Error deleting sale:", error);
+    sendResponse(res, false, "Failed to delete sale", null, [error.message]);
   }
-
-  // const shopProduct = await Shop.findByPk(sale.product_id);
-  // if (!shopProduct) {
-  //   res.status(404).json({ message: "Product not found" });
-  //   return;
-  // }
-
-  // shopProduct.quantity += sale.quantity_sold;
-  // await shopProduct.save();
-
-  await sale.destroy();
-  res.status(200).json({ message: "Sale deleted successfully" });
 });
-
-// @desc    Get all sales
-// @route   GET /api/sales
-// @access  Private/User
-const getAllSales = asyncHandler(async (req, res) => {
-  const sales = await Sale.findAll();
-  res.status(200).json(sales);
-});
-
-export {
-  createSale,
-  getSalesByDate,
-  updateSale,
-  deleteSale,
-  getSalesByDateRange,
-  getAllSales,
-};

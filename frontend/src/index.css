@@ -15,7 +15,7 @@
 }
 
 .sidebar:hover {
-  width: 250px; /* Expanded width */
+  width: 250px;
 }
 
 .sidebar:hover .sidebar-text {

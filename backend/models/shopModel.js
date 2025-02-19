@@ -45,7 +45,7 @@ const Shop = sequelize.define(
     },
   },
   {
-    timestamps: true, // Automatically handle created_at and updated_at
+    timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
   }

@@ -25,19 +25,13 @@ router
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);
 
-// Admin-only route example
-router.get("/admin", protect, admin, (req, res) => {
-  res.send("Admin Access");
-});
 router.get("/", protect, admin, getAllUsers);
 
-// Admin-only route to get all users
 router.get("/admin/users", protect, admin, async (req, res) => {
   const users = await User.findAll();
   res.json(users);
 });
 
-// Delete user route (admin-only with primary admin restrictions)
 router.delete("/:id", protect, admin, primaryAdmin, deleteUser);
 
 export default router;

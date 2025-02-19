@@ -19,26 +19,26 @@ const Product = sequelize.define(
       allowNull: false,
     },
     buyingPrice: {
-      type: DataTypes.DECIMAL(10, 2), // Decimal with precision 10 and scale 2
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
     sellingPrice: {
-      type: DataTypes.DECIMAL(10, 2), // Decimal with precision 10 and scale 2
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
     batchNumber: {
       type: DataTypes.STRING(50),
-      allowNull: true, // Optional field
+      allowNull: true,
     },
     date: {
       type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW, // Default to current timestamp
+      defaultValue: DataTypes.NOW,
     },
   },
   {
-    timestamps: true, // This will automatically handle created_at and updated_at
-    createdAt: "created_at", // Map to the existing created_at column
-    updatedAt: "updated_at", // Map to the existing updated_at column
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   }
 );
 

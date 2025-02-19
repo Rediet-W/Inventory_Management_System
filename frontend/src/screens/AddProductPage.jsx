@@ -14,13 +14,6 @@ import { useNavigate } from "react-router-dom";
 import { useDeleteProductMutation } from "../slices/productApiSlice";
 import { useSelector } from "react-redux";
 
-const formatDate = (dateString) => {
-  const options = { day: "2-digit", month: "short", year: "numeric" };
-  return new Date(dateString)
-    .toLocaleDateString("en-GB", options)
-    .replace(/ /g, "-");
-};
-
 const AddProductPage = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const [name, setName] = useState("");
@@ -29,28 +22,35 @@ const AddProductPage = () => {
   const [quantity, setQuantity] = useState("");
   const [date, setDate] = useState("");
   const [batchNumber, setBatchNumber] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const [createProduct, { isLoading: productLoading, error: productError }] =
+  const [createProduct, { isLoading: productLoading }] =
     useCreateProductMutation();
-  const [createPurchase, { isLoading: purchaseLoading, error: purchaseError }] =
+  const [createPurchase, { isLoading: purchaseLoading }] =
     useCreatePurchaseMutation();
   const [deleteProduct] = useDeleteProductMutation();
   const navigate = useNavigate();
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
+    setErrorMessage(""); // Reset errors
+
+    if (!userInfo) {
+      setErrorMessage("User not authenticated. Please log in.");
+      return;
+    }
 
     try {
       const productData = {
         name,
-        quantity: 0,
+        quantity: 0, // Initial quantity
         buyingPrice: Number(buyingPrice),
         sellingPrice: Number(sellingPrice),
         batchNumber,
       };
 
       const createdProduct = await createProduct(productData).unwrap();
-      console.log(createProduct, "created product");
+
       try {
         const purchaseData = {
           productId: createdProduct.id,
@@ -61,22 +61,25 @@ const AddProductPage = () => {
         };
 
         await createPurchase(purchaseData).unwrap();
-
-        navigate("/");
+        navigate("/"); // Redirect to home
       } catch (purchaseError) {
         console.error(
-          "Purchase creation failed. Deleting product...",
+          "❌ Purchase creation failed, rolling back...",
           purchaseError
         );
 
-        await deleteProduct(createdProduct._id).unwrap();
+        // Delete the created product if purchase fails
+        await deleteProduct(createdProduct.id).unwrap();
 
-        console.error("Product deleted after purchase creation failed.");
-
-        alert("Error creating purchase. Product creation was rolled back.");
+        setErrorMessage(
+          "Error creating purchase. Product creation was rolled back."
+        );
       }
     } catch (productError) {
-      console.error("Error creating product:", productError);
+      console.error("❌ Error creating product:", productError);
+      setErrorMessage(
+        productError.data?.message || "Failed to add product. Try again."
+      );
     }
   };
 
@@ -87,6 +90,8 @@ const AddProductPage = () => {
           <Card className="shadow-sm">
             <Card.Body>
               <h2 className="text-center mb-4">Add New Product</h2>
+
+              {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
               <Form onSubmit={handleAddProduct}>
                 <Form.Group controlId="productName" className="mb-3">
@@ -174,17 +179,6 @@ const AddProductPage = () => {
                     ? "Adding..."
                     : "Add Product"}
                 </Button>
-
-                {productError && (
-                  <Alert variant="danger" className="mt-3">
-                    {productError.data?.message || productError.error}
-                  </Alert>
-                )}
-                {purchaseError && (
-                  <Alert variant="danger" className="mt-3">
-                    {purchaseError.data?.message || purchaseError.error}
-                  </Alert>
-                )}
               </Form>
             </Card.Body>
           </Card>

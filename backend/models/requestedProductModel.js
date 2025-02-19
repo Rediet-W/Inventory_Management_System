@@ -20,7 +20,7 @@ const RequestedProduct = sequelize.define(
     },
     quantity: {
       type: DataTypes.INTEGER,
-      defaultValue: 1, // Default quantity is 1
+      defaultValue: 1,
       allowNull: false,
     },
     date_requested: {
@@ -30,12 +30,12 @@ const RequestedProduct = sequelize.define(
     },
     status: {
       type: DataTypes.ENUM("pending", "purchased", "fulfilled"),
-      defaultValue: "pending", // Default status is 'pending'
+      defaultValue: "pending",
       allowNull: false,
     },
   },
   {
-    timestamps: true, // Automatically handle created_at and updated_at
+    timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
   }

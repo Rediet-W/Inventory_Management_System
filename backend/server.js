@@ -1,9 +1,9 @@
 import path from "path";
 import express from "express";
 import dotenv from "dotenv";
-import { connectDB, sequelize } from "./config/db.js"; // Use Sequelize connection
+import { connectDB, sequelize } from "./config/db.js";
 import cookieParser from "cookie-parser";
-import cors from "cors"; // Import CORS middleware
+import cors from "cors";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import userRoutes from "./routes/userRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
@@ -12,19 +12,16 @@ import saleRoute from "./routes/saleRoutes.js";
 import purchaseRoute from "./routes/purchaseRoutes.js";
 import shopRoute from "./routes/shopRoutes.js";
 
-dotenv.config(); // Load environment variables
+dotenv.config();
 
 const port = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    // Initialize the database connection and sync models
-    await connectDB(); // Connect to the database using Sequelize
-    await sequelize.sync(); // Sync Sequelize models with the MySQL database
-
+    await connectDB();
+    await sequelize.sync();
     const app = express();
 
-    // Enable CORS
     app.use(
       cors({
         origin: (origin, callback) => {
@@ -34,30 +31,25 @@ const startServer = async () => {
             "https://inventory-management-system.vercel.app", // Stable production URL
           ];
 
-          // Allow requests from static origins or Vercel preview URLs
           if (!origin || allowedOrigins.includes(origin)) {
-            return callback(null, true); // Allow if origin is static or no origin (e.g., Postman)
+            return callback(null, true);
           }
 
-          // Allow dynamic Vercel preview URLs
           const regex =
             /^https:\/\/inventory-management-system-[\w-]+\.vercel\.app$/;
           if (regex.test(origin)) {
-            return callback(null, true); // Allow preview deployments
+            return callback(null, true);
           }
 
-          // Reject any other origins
           callback(new Error("Not allowed by CORS"));
         },
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
-        credentials: true, // Allow cookies or Authorization headers
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+        credentials: true,
       })
     );
-    // Middleware to parse incoming requests
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
-    // Middleware for cookies
     app.use(cookieParser());
 
     // Route handling
@@ -94,8 +86,8 @@ const startServer = async () => {
     );
   } catch (error) {
     console.error("Failed to start the server:", error);
-    process.exit(1); // Exit process with failure code
+    process.exit(1);
   }
 };
 
-startServer(); // Call the function to start the server
+startServer();

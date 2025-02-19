@@ -1,83 +1,143 @@
 import asyncHandler from "express-async-handler";
-import RequestedProduct from "../models/requestedProductModel.js";
+import * as requestedProductService from "../services/requestedProductService.js";
+
+const sendResponse = (res, success, message, data = null, errors = []) => {
+  res.status(success ? 200 : 400).json({ success, message, data, errors });
+};
 
 // @desc    Get all requested products
 // @route   GET /api/requested-products
-// @access  Private
-const getRequestedProducts = asyncHandler(async (req, res) => {
-  const requestedProducts = await RequestedProduct.findAll(); // Fetch all requested products
-  res.json(requestedProducts);
+// @access  Private (Authenticated users)
+export const getRequestedProducts = asyncHandler(async (req, res) => {
+  try {
+    const requestedProducts =
+      await requestedProductService.getAllRequestedProducts();
+    sendResponse(
+      res,
+      true,
+      "Requested products retrieved successfully",
+      requestedProducts
+    );
+  } catch (error) {
+    console.error("Error fetching requested products:", error);
+    sendResponse(res, false, "Failed to retrieve requested products", null, [
+      error.message,
+    ]);
+  }
 });
 
-// @desc    Create a requested product
+// @desc    Create a new requested product
 // @route   POST /api/requested-products
-// @access  Private
-const createRequestedProduct = asyncHandler(async (req, res) => {
-  const { product_name, description, quantity = 1 } = req.body;
+// @access  Private (Users)
+export const createRequestedProduct = asyncHandler(async (req, res) => {
+  try {
+    const { product_name, description, quantity = 1 } = req.body;
+    const errors = [];
 
-  // Ensure both product and description are provided
-  if (!product_name || !description) {
-    res
-      .status(400)
-      .json({ message: "Please provide both product name and description." });
-    return;
+    //  Input validation
+    if (!product_name) errors.push("Product name is required");
+    if (!description) errors.push("Description is required");
+    if (quantity <= 0 || isNaN(quantity))
+      errors.push("Quantity must be a valid number greater than 0");
+
+    if (errors.length > 0) {
+      return sendResponse(
+        res,
+        false,
+        "Invalid input for requested product",
+        null,
+        errors
+      );
+    }
+
+    const requestedProduct =
+      await requestedProductService.createRequestedProduct(req.body);
+    sendResponse(
+      res,
+      true,
+      "Requested product created successfully",
+      requestedProduct
+    );
+  } catch (error) {
+    console.error("Error creating requested product:", error);
+    sendResponse(res, false, "Failed to create requested product", null, [
+      error.message,
+    ]);
   }
+});
 
-  const requestedProduct = await RequestedProduct.create({
-    product_name,
-    description,
-    quantity,
-  });
+// @desc    Update requested product quantity
+// @route   PATCH /api/requested-products/:id
+// @access  Private (Users)
+export const updateRequestedProduct = asyncHandler(async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    const requestedProductId = req.params.id;
+    const errors = [];
 
-  res.status(201).json({
-    message: "Requested product created successfully",
-    requestedProduct,
-  });
+    if (!requestedProductId) errors.push("Requested product ID is required");
+    if (!quantity || isNaN(quantity) || quantity <= 0)
+      errors.push("Quantity must be a valid number greater than 0");
+
+    if (errors.length > 0) {
+      return sendResponse(res, false, "Invalid update input", null, errors);
+    }
+
+    const requestedProduct =
+      await requestedProductService.updateRequestedProduct(
+        requestedProductId,
+        quantity
+      );
+    if (requestedProduct) {
+      sendResponse(
+        res,
+        true,
+        "Requested product updated successfully",
+        requestedProduct
+      );
+    } else {
+      sendResponse(res, false, "Requested product not found", null, [
+        "Invalid requested product ID",
+      ]);
+    }
+  } catch (error) {
+    console.error(" Error updating requested product:", error);
+    sendResponse(res, false, "Failed to update requested product", null, [
+      error.message,
+    ]);
+  }
 });
 
 // @desc    Delete a requested product
 // @route   DELETE /api/requested-products/:id
-// @access  Private
-const deleteRequestedProduct = asyncHandler(async (req, res) => {
-  const requestedProduct = await RequestedProduct.findByPk(req.params.id);
+// @access  Private (Users/Admins)
+export const deleteRequestedProduct = asyncHandler(async (req, res) => {
+  try {
+    const requestedProductId = req.params.id;
+    if (!requestedProductId) {
+      return sendResponse(
+        res,
+        false,
+        "Requested product ID is required",
+        null,
+        ["Missing requested product ID"]
+      );
+    }
 
-  if (!requestedProduct) {
-    res.status(404).json({ message: "Requested product not found" });
-    return;
+    const result = await requestedProductService.deleteRequestedProduct(
+      requestedProductId
+    );
+    if (result) {
+      sendResponse(res, true, "Requested product deleted successfully");
+    } else {
+      sendResponse(res, false, "Requested product not found", null, [
+        "Invalid requested product ID",
+      ]);
+    }
+  } catch (error) {
+    console.error(" Error deleting requested product:", error);
+    sendResponse(res, false, "Failed to delete requested product", null, [
+      error.message,
+    ]);
   }
-
-  await requestedProduct.destroy(); // Delete requested product
-
-  res.json({ message: "Requested product removed successfully" });
 });
-
-// @desc    Update requested product quantity
-// @route   PUT /api/requested-products/:id
-// @access  Private
-const updateRequestedProduct = asyncHandler(async (req, res) => {
-  const { quantity } = req.body;
-
-  if (!quantity) {
-    res.status(400).json({ message: "Please provide a quantity" });
-    return;
-  }
-
-  const requestedProduct = await RequestedProduct.findByPk(req.params.id);
-
-  if (!requestedProduct) {
-    res.status(404).json({ message: "Requested product not found" });
-    return;
-  }
-
-  requestedProduct.quantity = quantity;
-  await requestedProduct.save(); // Save updated quantity
-
-  res.json({ message: "Requested product quantity updated successfully" });
-});
-
-export {
-  getRequestedProducts,
-  createRequestedProduct,
-  deleteRequestedProduct,
-  updateRequestedProduct,
-};

@@ -12,7 +12,7 @@ const Purchase = sequelize.define(
     },
     product_id: {
       type: DataTypes.INTEGER,
-      allowNull: true, // Allow NULL values
+      allowNull: true,
       references: {
         model: Product,
         key: "id",
@@ -32,7 +32,7 @@ const Purchase = sequelize.define(
       allowNull: false,
     },
     purchase_date: {
-      type: DataTypes.DATEONLY, // DATE type for just the date (without time)
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     user_name: {
@@ -41,7 +41,7 @@ const Purchase = sequelize.define(
     },
   },
   {
-    timestamps: true, // Automatically handle created_at and updated_at
+    timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
   }

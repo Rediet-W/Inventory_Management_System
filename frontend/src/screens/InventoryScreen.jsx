@@ -7,6 +7,7 @@ import {
   Row,
   Col,
   Pagination,
+  Alert,
 } from "react-bootstrap";
 import {
   useGetProductsQuery,
@@ -23,12 +24,13 @@ const InventoryPage = () => {
   const { data: products, isLoading, error, refetch } = useGetProductsQuery();
   const { userInfo } = useSelector((state) => state.auth);
 
-  const [addToShop] = useAddToShopMutation();
-  const [deleteProduct] = useDeleteProductMutation();
+  const [addToShop, { isLoading: isAdding }] = useAddToShopMutation();
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState("productName");
   const [quantities, setQuantities] = useState({});
+  const [errorMessage, setErrorMessage] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -37,23 +39,31 @@ const InventoryPage = () => {
   }, [refreshKey, refetch]);
 
   if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading products</div>;
+  if (error) return <Alert variant="danger">Error loading products</Alert>;
 
   const handleQuantityChange = (productId, value) => {
     setQuantities({ ...quantities, [productId]: value });
   };
 
-  const handleAddToShop = async (productId, productName) => {
+  const handleAddToShop = async (productId) => {
     const quantityToAdd = quantities[productId];
     const product = products.find((product) => product.id === productId);
 
-    if (!quantityToAdd || quantityToAdd <= 0) {
-      alert("Please enter a valid quantity.");
+    // ✅ Check if required fields are present before making the request
+    if (!product?.name) {
+      setErrorMessage("Product name is required.");
       return;
     }
-
+    if (!product?.buyingPrice || isNaN(Number(product.buyingPrice))) {
+      setErrorMessage("Buying price must be a valid number.");
+      return;
+    }
+    if (!quantityToAdd || quantityToAdd <= 0) {
+      setErrorMessage("Please enter a valid quantity.");
+      return;
+    }
     if (quantityToAdd > product.quantity) {
-      alert(
+      setErrorMessage(
         `Cannot add more than available quantity. Available: ${product.quantity}`
       );
       return;
@@ -62,27 +72,35 @@ const InventoryPage = () => {
     try {
       await addToShop({
         productId,
+        name: product.name,
         batchNumber: product.batchNumber,
-        quantity: parseInt(quantityToAdd),
-        sellingPrice: product.sellingPrice,
-        userName: userInfo.name,
-      });
+        quantity: parseInt(quantityToAdd, 10),
+        buyingPrice: parseFloat(product.buyingPrice),
+        sellingPrice: parseFloat(product.sellingPrice),
+        userName: userInfo?.name,
+      }).unwrap();
 
-      alert(`Added ${quantityToAdd} units of ${productName} to shop`);
-      dispatch(triggerRefresh()); // Trigger global refresh
+      alert(`✅ Added ${quantityToAdd} units of ${product.name} to shop`);
+      setQuantities((prev) => ({
+        ...prev,
+        [productId]: "", // Reset to empty string
+      }));
+      dispatch(triggerRefresh());
     } catch (error) {
-      console.error("Failed to add product to shop", error);
+      console.error("❌ Failed to add product to shop", error);
+      setErrorMessage(error.data?.message || "Failed to add product to shop");
     }
   };
 
   const handleDeleteProduct = async (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await deleteProduct(productId);
-        alert("Product deleted successfully");
-        dispatch(triggerRefresh()); // Trigger global refresh
+        await deleteProduct(productId).unwrap();
+        alert("✅ Product deleted successfully");
+        dispatch(triggerRefresh());
       } catch (error) {
-        console.error("Failed to delete product", error);
+        console.error("❌ Failed to delete product", error);
+        setErrorMessage(error.data?.message || "Failed to delete product");
       }
     }
   };
@@ -101,7 +119,7 @@ const InventoryPage = () => {
         filter === "lowStock" ? product.quantity < 3 : true;
       return matchesSearchQuery && matchesLowStock;
     })
-    .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded)); // Sort by latest date
+    .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
 
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -117,6 +135,9 @@ const InventoryPage = () => {
   return (
     <div className="container mt-5">
       <h2>{filter === "all" ? "All Products" : "Low Stock Products"}</h2>
+
+      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+
       <Row className="align-items-center mb-4">
         <Col md={8}>
           <Nav variant="tabs">
@@ -185,16 +206,18 @@ const InventoryPage = () => {
                     <Button
                       variant="primary"
                       className="btn-sm"
-                      onClick={() => handleAddToShop(product.id, product.name)}
+                      onClick={() => handleAddToShop(product.id)}
+                      disabled={isAdding}
                     >
-                      Add to Shop
+                      {isAdding ? "Adding..." : "Add to Shop"}
                     </Button>
                     <Button
                       variant="danger"
                       className="btn-sm ml-2"
                       onClick={() => handleDeleteProduct(product.id)}
+                      disabled={isDeleting}
                     >
-                      Delete
+                      {isDeleting ? "Deleting..." : "Delete"}
                     </Button>
                   </td>
                 </>

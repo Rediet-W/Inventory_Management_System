@@ -1,157 +1,216 @@
 import asyncHandler from "express-async-handler";
-import User from "../models/userModel.js";
+import * as userService from "../services/userService.js";
 import generateToken from "../utils/generateToken.js";
 import bcrypt from "bcryptjs";
 
-// @desc    Auth user & get token
-// @route   POST /api/users/auth
-// @access  Public
-const authUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+// 📌 Utility function for structured responses
+const sendResponse = (res, success, message, data = null, errors = []) => {
+  res.status(success ? 200 : 400).json({ success, message, data, errors });
+};
 
-  const user = await User.findOne({ where: { email } }); // Find user by email
+/**
+ * Authenticate user & get token
+ * @route   POST /api/users/login
+ * @access  Public
+ */
+export const authUser = asyncHandler(async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const errors = [];
 
-  if (user && (await bcrypt.compare(password, user.password))) {
-    generateToken(res, user.id);
+    if (!email || !password) errors.push("Email and password are required");
 
-    res.json({
+    if (errors.length > 0) {
+      return sendResponse(res, false, "Invalid login request", null, errors);
+    }
+
+    const user = await userService.findUserByEmail(email);
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return sendResponse(res, false, "Invalid email or password", null, [
+        "Incorrect email or password",
+      ]);
+    }
+
+    const token = generateToken(user.id);
+    console.log("Generated Token:", token);
+
+    sendResponse(res, true, "Login successful", {
       _id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
       isPrimaryAdmin: user.is_primary_admin,
+      token,
     });
-  } else {
-    res.status(401).json({ message: "Invalid email or password" });
+  } catch (error) {
+    console.error(" Error during authentication:", error);
+    sendResponse(res, false, "Login failed", null, [error.message]);
   }
 });
 
-// @desc    Register a new user
-// @route   POST /api/users
-// @access  Public
-const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+/**
+ * Register a new user
+ * @route   POST /api/users/register
+ * @access  Public
+ */
+export const registerUser = asyncHandler(async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+    const errors = [];
 
-  const userExists = await User.findOne({ where: { email } });
+    if (!name) errors.push("Name is required");
+    if (!email) errors.push("Email is required");
+    if (!password || password.length < 6)
+      errors.push("Password must be at least 6 characters");
+    if (!role) errors.push("Role is required");
 
-  if (userExists) {
-    res.status(400).json({ message: "User already exists" });
-  } else {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    if (errors.length > 0) {
+      return sendResponse(
+        res,
+        false,
+        "Invalid registration data",
+        null,
+        errors
+      );
+    }
 
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role: "user", // Default role is 'user'
-    });
+    const userExists = await userService.findUserByEmail(email);
+    if (userExists) {
+      return sendResponse(res, false, "User already exists", null, [
+        "Email is already registered",
+      ]);
+    }
 
-    generateToken(res, user.id);
+    const user = await userService.createUser(req.body);
+    const token = generateToken(user.id);
 
-    res.status(201).json({
-      _id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    });
-  }
-});
-
-// @desc    Logout user / clear cookie
-// @route   POST /api/users/logout
-// @access  Public
-const logoutUser = (req, res) => {
-  res.cookie("jwt", "", {
-    httpOnly: true,
-    expires: new Date(0),
-  });
-  res.status(200).json({ message: "Logged out successfully" });
-};
-
-// @desc    Get user profile
-// @route   GET /api/users/profile
-// @access  Private
-const getUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findByPk(req.user.id); // Find user by ID
-
-  if (user) {
-    res.json({
+    sendResponse(res, true, "User registered successfully", {
       _id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
       isPrimaryAdmin: user.is_primary_admin,
+      token,
     });
-  } else {
-    res.status(404).json({ message: "User not found" });
+  } catch (error) {
+    console.error(" Error registering user:", error);
+    sendResponse(res, false, "Registration failed", null, [error.message]);
   }
 });
 
-// @desc    Update user profile
-// @route   PUT /api/users/profile
-// @access  Private
-const updateUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findByPk(req.user.id); // Find user by ID
+/**
+ * Logout user
+ * @route   POST /api/users/logout
+ * @access  Private
+ */
+export const logoutUser = (req, res) => {
+  try {
+    res.cookie("jwt", "", { httpOnly: true, expires: new Date(0) });
+    sendResponse(res, true, "Logged out successfully");
+  } catch (error) {
+    console.error(" Error logging out:", error);
+    sendResponse(res, false, "Logout failed", null, [error.message]);
+  }
+};
 
-  if (user) {
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
-
-    if (req.body.password) {
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(req.body.password, salt);
+/**
+ * Get user profile
+ * @route   GET /api/users/profile
+ * @access  Private
+ */
+export const getUserProfile = asyncHandler(async (req, res) => {
+  try {
+    const user = await userService.findUserById(req.user.id);
+    if (!user) {
+      return sendResponse(res, false, "User not found", null, [
+        "Invalid user ID",
+      ]);
     }
 
-    await user.save(); // Save updated user
-
-    res.json({
+    sendResponse(res, true, "User profile retrieved", {
       _id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
     });
-  } else {
-    res.status(404).json({ message: "User not found" });
+  } catch (error) {
+    console.error(" Error fetching user profile:", error);
+    sendResponse(res, false, "Failed to retrieve user profile", null, [
+      error.message,
+    ]);
   }
 });
 
-// @desc    Get all users (Admin only)
-// @route   GET /api/users/admin/users
-// @access  Private/Admin
-const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.findAll({
-    attributes: ["id", "name", "email", "role", "is_primary_admin"],
-  });
-  res.json(users);
-});
+/**
+ * Update user profile
+ * @route   PATCH /api/users/profile
+ * @access  Private
+ */
+export const updateUserProfile = asyncHandler(async (req, res) => {
+  try {
+    const updatedUser = await userService.updateUserProfile(
+      req.user.id,
+      req.body
+    );
 
-// @desc    Delete user (Admin only)
-// @route   DELETE /api/users/:id
-// @access  Private/Admin
-const deleteUser = asyncHandler(async (req, res) => {
-  const user = await User.findByPk(req.params.id); // Find user by ID
-
-  if (user) {
-    if (user.id === req.user.id) {
-      res.status(400).json({ message: "Cannot delete your own account" });
-    } else if (user.is_primary_admin) {
-      res.status(400).json({ message: "Cannot delete the primary admin" });
-    } else {
-      await user.destroy(); // Delete user
-      res.json({ message: "User removed" });
+    if (!updatedUser) {
+      return sendResponse(res, false, "User not found", null, [
+        "Invalid user ID",
+      ]);
     }
-  } else {
-    res.status(404).json({ message: "User not found" });
+
+    sendResponse(res, true, "User profile updated", {
+      _id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+    });
+  } catch (error) {
+    console.error(" Error updating user profile:", error);
+    sendResponse(res, false, "Failed to update user profile", null, [
+      error.message,
+    ]);
   }
 });
 
-export {
-  authUser,
-  registerUser,
-  logoutUser,
-  getUserProfile,
-  updateUserProfile,
-  getAllUsers,
-  deleteUser,
-};
+/**
+ * Get all users (Admin only)
+ * @route   GET /api/users
+ * @access  Private/Admin
+ */
+export const getAllUsers = asyncHandler(async (req, res) => {
+  try {
+    const users = await userService.getAllUsers();
+    sendResponse(res, true, "All users retrieved successfully", users);
+  } catch (error) {
+    console.error(" Error fetching users:", error);
+    sendResponse(res, false, "Failed to fetch users", null, [error.message]);
+  }
+});
+
+/**
+ * Delete user (Admin only)
+ * @route   DELETE /api/users/:id
+ * @access  Private/Admin
+ */
+export const deleteUser = asyncHandler(async (req, res) => {
+  try {
+    const result = await userService.deleteUser(req.params.id, req.user.id);
+
+    if (result?.error) {
+      return sendResponse(res, false, "Failed to delete user", null, [
+        result.error,
+      ]);
+    } else if (!result) {
+      return sendResponse(res, false, "User not found", null, [
+        "Invalid user ID",
+      ]);
+    }
+
+    sendResponse(res, true, "User deleted successfully", { success: true });
+  } catch (error) {
+    console.error(" Error deleting user:", error);
+    sendResponse(res, false, "Failed to delete user", null, [error.message]);
+  }
+});

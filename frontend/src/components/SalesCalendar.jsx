@@ -23,8 +23,10 @@ const SalesCalendar = () => {
   });
 
   useEffect(() => {
-    if (sales) {
-      const salesByProduct = sales.reduce((acc, sale) => {
+    console.log(sales, "sales");
+    if (sales?.success && sales.data) {
+      // ✅ Check if response was successful
+      const salesByProduct = sales.data.reduce((acc, sale) => {
         acc[sale.product_id] = acc[sale.product_id] || {
           product_name: sale.product_name,
           total_quantity_sold: 0,
@@ -38,6 +40,10 @@ const SalesCalendar = () => {
         .slice(0, 3);
 
       setMonthlyTopSales(topSales);
+      setIsFetching(false);
+    } else if (sales?.errors) {
+      // ✅ Handle API errors
+      console.error("Failed to fetch sales data:", sales.errors);
       setIsFetching(false);
     }
   }, [sales]);

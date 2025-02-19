@@ -1,134 +1,162 @@
 import asyncHandler from "express-async-handler";
-import Product from "../models/productModel.js";
-import { Op } from "sequelize"; // Import Op from Sequelize
-import Purchase from "../models/purchaseModel.js";
-import Sale from "../models/saleModel.js";
+import * as productService from "../services/productService.js";
+
+const sendResponse = (res, success, message, data = null, errors = []) => {
+  res.status(success ? 200 : 400).json({ success, message, data, errors });
+};
+
 // @desc    Get all products
 // @route   GET /api/products
-// @access  Public
-const getProducts = asyncHandler(async (req, res) => {
-  const products = await Product.findAll(); // Sequelize ORM method to get all products
-  res.json(products);
+// @access  Private (Authenticated users)
+export const getProducts = asyncHandler(async (req, res) => {
+  try {
+    const products = await productService.getAllProducts();
+    sendResponse(res, true, "Products retrieved successfully", products);
+  } catch (error) {
+    console.error("❌ Error fetching products:", error);
+    sendResponse(res, false, "Failed to fetch products", null, [error.message]);
+  }
 });
 
 // @desc    Get product by ID
 // @route   GET /api/products/:id
-// @access  Public
-const getProductById = asyncHandler(async (req, res) => {
-  const product = await Product.findByPk(req.params.id); // Sequelize ORM method to get product by ID
-  if (product) {
-    res.json(product);
-  } else {
-    res.status(404).json({ message: "Product not found" });
+// @access  Private (Authenticated users)
+export const getProductById = asyncHandler(async (req, res) => {
+  try {
+    const productId = req.params.id;
+    if (!productId) {
+      return sendResponse(res, false, "Product ID is required", null, [
+        "Missing product ID",
+      ]);
+    }
+
+    const product = await productService.getProductById(productId);
+    if (product) {
+      sendResponse(res, true, "Product retrieved successfully", product);
+    } else {
+      sendResponse(res, false, "Product not found", null, [
+        "Invalid product ID",
+      ]);
+    }
+  } catch (error) {
+    console.error(" Error fetching product by ID:", error);
+    sendResponse(res, false, "Failed to fetch product", null, [error.message]);
   }
 });
 
 // @desc    Create a new product
 // @route   POST /api/products
-// @access  Private/Admin
-const createProduct = asyncHandler(async (req, res) => {
-  const { name, quantity, buyingPrice, sellingPrice, batchNumber } = req.body;
+// @access  Private (Admin only)
+export const createProduct = asyncHandler(async (req, res) => {
+  try {
+    const { name, buyingPrice, sellingPrice, batchNumber } = req.body;
+    const errors = [];
 
-  const product = await Product.create({
-    name,
-    quantity,
-    buyingPrice,
-    sellingPrice,
-    batchNumber,
-  });
+    if (!name) errors.push("Product name is required");
+    if (!batchNumber) errors.push("Batch number is required");
+    if (!buyingPrice || isNaN(buyingPrice))
+      errors.push("Buying price must be a valid number");
+    if (!sellingPrice || isNaN(sellingPrice))
+      errors.push("Selling price must be a valid number");
 
-  res.status(201).json(product);
+    if (errors.length > 0) {
+      return sendResponse(res, false, "Invalid input", null, errors);
+    }
+
+    const product = await productService.createProduct(req.body);
+    sendResponse(res, true, "Product created successfully", product);
+  } catch (error) {
+    console.error("❌ Error creating product:", error);
+    sendResponse(res, false, "Failed to create product", null, [error.message]);
+  }
 });
 
 // @desc    Update a product
 // @route   PUT /api/products/:id
-// @access  Private/Admin
-const updateProduct = asyncHandler(async (req, res) => {
-  const { name, quantity, buyingPrice, sellingPrice, batchNumber } = req.body;
+// @access  Private (Admin only)
+export const updateProduct = asyncHandler(async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const { name, buyingPrice, sellingPrice, batchNumber } = req.body;
+    const errors = [];
+    // 📌 Input validation
+    if (!name) errors.push("Product name is required");
+    if (!batchNumber) errors.push("Batch number is required");
+    if (!buyingPrice || isNaN(buyingPrice))
+      errors.push("Buying price must be a valid number");
+    if (!sellingPrice || isNaN(sellingPrice))
+      errors.push("Selling price must be a valid number");
 
-  const product = await Product.findByPk(req.params.id); // Find product by ID
+    if (errors.length > 0) {
+      return sendResponse(res, false, "Invalid input", null, errors);
+    }
 
-  if (product) {
-    product.name = name;
-    product.quantity = quantity;
-    product.buyingPrice = buyingPrice;
-    product.sellingPrice = sellingPrice;
-    product.batchNumber = batchNumber;
-
-    const updatedProduct = await product.save(); // Save the updated product
-    res.json(updatedProduct);
-  } else {
-    res.status(404).json({ message: "Product not found" });
+    const updatedProduct = await productService.updateProduct(
+      productId,
+      req.body
+    );
+    if (updatedProduct) {
+      sendResponse(res, true, "Product updated successfully", updatedProduct);
+    } else {
+      sendResponse(res, false, "Product not found", null, [
+        "Invalid product ID",
+      ]);
+    }
+  } catch (error) {
+    console.error("❌ Error updating product:", error);
+    sendResponse(res, false, "Failed to update product", null, [error.message]);
   }
 });
 
 // @desc    Delete a product
 // @route   DELETE /api/products/:id
-// @access  Private/Admin
-const deleteProduct = asyncHandler(async (req, res) => {
-  const product = await Product.findByPk(req.params.id); // Find product by ID
+// @access  Private (Admin only)
+export const deleteProduct = asyncHandler(async (req, res) => {
+  try {
+    const productId = req.params.id;
+    if (!productId) {
+      return sendResponse(res, false, "Product ID is required", null, [
+        "Missing product ID",
+      ]);
+    }
 
-  if (product) {
-    // await Purchase.update(
-    //   { product_id: null },
-    //   { where: { product_id: req.params.id } }
-    // );
-    // await Sale.update(
-    //   { product_id: null },
-    //   { where: { product_id: req.params.id } }
-    // );
-    await product.destroy(); // Delete the product
-    res.status(200).json({ message: "Product removed successfully" });
-  } else {
-    res.status(404).json({ message: "Product not found" });
+    const result = await productService.deleteProduct(productId);
+    if (result) {
+      sendResponse(res, true, "Product deleted successfully");
+    } else {
+      sendResponse(res, false, "Product not found", null, [
+        "Invalid product ID",
+      ]);
+    }
+  } catch (error) {
+    console.error("❌ Error deleting product:", error);
+    sendResponse(res, false, "Failed to delete product", null, [error.message]);
   }
 });
 
-// @desc    Get products by date range
-// @route   GET /api/products?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
-// @access  Private/User
+// @desc    Get products within a date range
+// @route   GET /api/products/date
+// @access  Private (Authenticated users)
+export const getProductsByDate = asyncHandler(async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const errors = [];
 
-const getProductsByDate = asyncHandler(async (req, res) => {
-  const { startDate, endDate } = req.query;
-  console.log("Start:", start, "End:", end);
+    if (!startDate || !endDate) {
+      errors.push("Both startDate and endDate are required");
+      return sendResponse(res, false, "Invalid input", null, errors);
+    }
 
-  // Check if startDate and endDate are provided
-  if (!startDate || !endDate) {
-    res
-      .status(400)
-      .json({ message: "Please provide both startDate and endDate" });
-    return;
-  }
-
-  // Ensure date filtering includes the full start and end dates
-  const start = new Date(startDate).setHours(0, 0, 0, 0); // Start of the day
-  const end = new Date(endDate).setHours(23, 59, 59, 999); // End of the day
-
-  // Log for debugging (optional)
-
-  // Fetch products by date range using 'created_at' since it's mapped in the model
-  const products = await Product.findAll({
-    where: {
-      created_at: {
-        [Op.between]: [start, end], // Use created_at since that's what Sequelize is using
-      },
-    },
-  });
-
-  if (products.length > 0) {
-    res.status(200).json(products);
-  } else {
-    res
-      .status(404)
-      .json({ message: "No products found for the selected date range" });
+    const products = await productService.getProductsByDate(startDate, endDate);
+    if (products.length > 0) {
+      sendResponse(res, true, "Products retrieved successfully", products);
+    } else {
+      sendResponse(res, false, "No products found", null, [
+        "No products within the given date range",
+      ]);
+    }
+  } catch (error) {
+    console.error("❌ Error fetching products by date range:", error);
+    sendResponse(res, false, "Failed to fetch products", null, [error.message]);
   }
 });
-
-export {
-  getProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getProductsByDate,
-};

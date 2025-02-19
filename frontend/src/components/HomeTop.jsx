@@ -4,19 +4,22 @@ import { useGetProductsQuery } from "../slices/productApiSlice";
 import { useGetShopProductsQuery } from "../slices/shopApiSlice";
 
 const HomeTop = () => {
+  // Fetch store products
   const { data: products, isLoading, error } = useGetProductsQuery();
+
   const {
     data: shops,
     isLoading: shopLoading,
     error: shopError,
-  } = useGetShopProductsQuery();
+  } = useGetShopProductsQuery({});
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading products</div>;
+  // Handle loading states
+  if (isLoading || shopLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading store products</div>;
+  if (shopError) return <div>Error loading shop products</div>;
 
-  const { allProducts = [], lowStockinshop = [] } = shops || {};
+  const { allProducts = [], lowStockProducts = [] } = shops || {};
 
-  // Calculate total store value (sum of all buying prices)
   const totalStoreValue = products.reduce(
     (total, product) => total + product.buyingPrice * product.quantity,
     0
@@ -28,9 +31,10 @@ const HomeTop = () => {
   );
 
   const totalItems = products.length;
-
-  // Filter products with less than 3 in quantity
-  const lowStockProducts = products.filter((product) => product.quantity < 3);
+  // Filter low stock items in store
+  const lowStockProductsInStore = products.filter(
+    (product) => product.quantity < 3
+  );
 
   return (
     <Row className="g-4">
@@ -58,11 +62,15 @@ const HomeTop = () => {
       <Col xs={12} md={4}>
         <Card className="text-center shadow-sm">
           <Card.Body>
-            <Card.Title>Low Stock Items</Card.Title>
-            <Card.Text className="h4">{lowStockProducts.length}</Card.Text>
-            {lowStockProducts.length > 0 && (
+            <Card.Title>Low Stock Items in shop</Card.Title>
+            <Card.Text className="h4">
+              {shops.lowStockProducts.length}
+            </Card.Text>
+            {lowStockProductsInStore.length > 0 && (
               <Card.Text className="text-muted">
-                {lowStockProducts.map((product) => product.name).join(", ")}
+                {lowStockProductsInStore
+                  .map((product) => product.name)
+                  .join(", ")}
               </Card.Text>
             )}
           </Card.Body>

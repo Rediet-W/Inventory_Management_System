@@ -1,30 +1,46 @@
-import { apiSlice } from "./apiSlice"; // Reuse the base configuration from apiSlice
+import { apiSlice } from "./apiSlice";
 
 export const summaryApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // Fetch sales within a date range
     getSalesByDateRange: builder.query({
       query: ({ startDate, endDate }) => {
         let url = "/api/sales/range";
         const params = new URLSearchParams();
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);
-        return `${url}?${params.toString()}`; // Constructs the URL with query params
+        return `${url}?${params.toString()}`;
       },
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error("Failed to fetch sales summary:", response.message);
+          throw new Error(response.message || "Error fetching sales summary");
+        }
+        return response.data;
+      },
+      providesTags: ["SalesSummary"],
     }),
-    // Fetch purchases within a date range
+
     getPurchasesByDateRange: builder.query({
       query: ({ startDate, endDate }) => {
-        let url = "/api/purchases/";
+        let url = "/api/purchases";
         const params = new URLSearchParams();
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);
-        return `${url}?${params.toString()}`; // Constructs the URL with query params
+        return `${url}?${params.toString()}`;
       },
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error("Failed to fetch purchases summary:", response.message);
+          throw new Error(
+            response.message || "Error fetching purchases summary"
+          );
+        }
+        return response.data;
+      },
+      providesTags: ["PurchasesSummary"],
     }),
   }),
 });
 
-// Export hooks for the defined queries
 export const { useGetSalesByDateRangeQuery, useGetPurchasesByDateRangeQuery } =
   summaryApiSlice;
