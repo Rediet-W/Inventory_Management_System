@@ -14,7 +14,6 @@ const authSlice = createSlice({
       console.log("🛠️ Dispatching setCredentials:", action.payload);
 
       if (action.payload?.success) {
-        // Ensure `data` is correctly extracted
         const userInfo = action.payload.data;
         if (userInfo && userInfo.token) {
           state.userInfo = userInfo;

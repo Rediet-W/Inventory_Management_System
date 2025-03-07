@@ -6,6 +6,7 @@ import {
   deleteSale,
   getSalesByDateRange,
   getAllSales,
+  getSalesByBatchNumber,
 } from "../controllers/saleController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { admin } from "../middleware/adminMiddleware.js";
@@ -21,5 +22,6 @@ router.route("/:id").put(protect, admin, updateSale);
 router.route("/:id").delete(protect, admin, deleteSale);
 
 router.route("/range").get(protect, getSalesByDateRange);
+router.get("/batch/:batchNumber", protect, getSalesByBatchNumber);
 
 export default router;

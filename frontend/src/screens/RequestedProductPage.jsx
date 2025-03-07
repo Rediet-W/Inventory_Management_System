@@ -40,12 +40,13 @@ const RequestedProductsPage = () => {
 
   // Modal state and pagination state
   const [showModal, setShowModal] = useState(false);
-  const [productName, setProductName] = useState("");
+  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [errorMessage, setErrorMessage] = useState(""); // 🔴 State for error messages
+  const [status, setStatus] = useState("pending"); // Status field
+  const [errorMessage, setErrorMessage] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
-  const [inputQuantities, setInputQuantities] = useState({});
+  const [inputStatuses, setInputStatuses] = useState({}); // Store status edits
 
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 10;
@@ -55,26 +56,27 @@ const RequestedProductsPage = () => {
   }, [refreshKey, refetch]);
 
   const handleShowModal = () => {
-    setErrorMessage(""); // Clear errors when opening modal
+    setErrorMessage("");
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setProductName("");
+    setName("");
     setDescription("");
     setQuantity(1);
+    setStatus("pending");
   };
 
-  // ✅ Handle Add Product with error handling
+  // ✅ Handle Add Product
   const handleAddProduct = async () => {
-    setErrorMessage(""); // Reset error message
-
+    setErrorMessage("");
     try {
       const response = await createRequestedProduct({
-        product_name: productName,
+        name, // ✅ Correct field name
         description,
         quantity,
+        status,
       }).unwrap();
 
       console.log("✅ Product Created:", response);
@@ -82,15 +84,11 @@ const RequestedProductsPage = () => {
       dispatch(triggerRefresh());
     } catch (err) {
       console.error("❌ Failed to add product:", err);
-      setErrorMessage(
-        err?.data?.errors?.join(", ") ||
-          err?.data?.message ||
-          "Error adding product"
-      );
+      setErrorMessage(err?.data?.message || "Error adding product");
     }
   };
 
-  // ✅ Handle Delete Product with error handling
+  // ✅ Handle Delete Product
   const handleDelete = async () => {
     if (
       window.confirm("Are you sure you want to delete the selected products?")
@@ -110,34 +108,22 @@ const RequestedProductsPage = () => {
     }
   };
 
-  // ✅ Handle Quantity Update with error handling
-  const handleQuantityInputChange = (productId, newValue) => {
-    setInputQuantities((prev) => ({
-      ...prev,
-      [productId]: newValue, // Update local state while typing
-    }));
-  };
-
-  const handleQuantityUpdate = async (productId) => {
-    const newQuantity = parseInt(inputQuantities[productId], 10);
-
-    if (!newQuantity || isNaN(newQuantity) || newQuantity <= 0) {
-      setErrorMessage("Quantity must be a valid number greater than 0.");
-      return;
-    }
+  // ✅ Handle Status Update
+  const handleStatusChange = async (productId) => {
+    const newStatus = inputStatuses[productId] || "pending";
 
     try {
       await updateRequestedProduct({
         id: productId,
-        quantity: newQuantity,
+        status: newStatus,
       }).unwrap();
       dispatch(triggerRefresh());
-      setErrorMessage(""); // Clear errors after successful update
     } catch (err) {
-      console.error("❌ Failed to update quantity:", err);
-      setErrorMessage(err?.data?.message || "Error updating quantity.");
+      console.error("❌ Failed to update status:", err);
+      setErrorMessage(err?.data?.message || "Error updating status.");
     }
   };
+
   const handleSelectProduct = (productId) => {
     setSelectedProducts((prev) =>
       prev.includes(productId)
@@ -167,9 +153,10 @@ const RequestedProductsPage = () => {
     <Container className="mt-5">
       <Row className="align-items-center mb-4">
         <Col>
-          <h2 className="text-center">Requested Products</h2>
+          <h2 className="text-center">Lost Sales</h2>
         </Col>
 
+        {/* ✅ Show "Add Requested Product" Button for Users */}
         {userInfo?.role !== "admin" && (
           <Col className="text-end">
             <Button variant="primary" onClick={handleShowModal}>
@@ -178,6 +165,7 @@ const RequestedProductsPage = () => {
           </Col>
         )}
 
+        {/* ✅ Show Delete Button for Admins */}
         {userInfo?.role === "admin" && selectedProducts.length > 0 && (
           <Col className="text-end">
             <Button variant="danger" onClick={handleDelete}>
@@ -187,45 +175,50 @@ const RequestedProductsPage = () => {
         )}
       </Row>
 
-      {/* ✅ Show API Errors */}
       {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
       {isLoading ? (
         <div className="text-center">
           <Spinner animation="border" variant="primary" />
         </div>
-      ) : error ? (
-        <Alert variant="danger" className="text-center">
-          Error loading requested products
-        </Alert>
       ) : (
         <Table striped bordered hover responsive className="table-sm shadow-sm">
-          <thead className="table-dark">
+          <thead className="">
             <tr>
-              <th>Product Name</th>
+              <th>Name</th>
               <th>Description</th>
-              <th>Number of requests</th>
-              {userInfo?.role === "admin" && <th>Select for Deletion</th>}
+              <th>Quantity</th>
+              <th>Status</th>
+              {userInfo?.role === "admin" && <th>Select</th>}
             </tr>
           </thead>
 
           <tbody>
             {currentProducts.map((product) => (
               <tr key={product.id}>
-                <td>{product.product_name}</td>
+                <td>{product.name}</td>
                 <td>{product.description}</td>
+                <td>{product.quantity}</td>
                 <td>
-                  <Form.Control
-                    type="number"
-                    value={inputQuantities[product.id] ?? product.quantity} // Use local state first
-                    min="1"
-                    onChange={(e) =>
-                      handleQuantityInputChange(product.id, e.target.value)
-                    }
-                    onBlur={() => handleQuantityUpdate(product.id)} // Update only when user finishes editing
-                  />
+                  {userInfo?.role === "admin" ? (
+                    <Form.Select
+                      value={inputStatuses[product.id] ?? product.status}
+                      onChange={(e) =>
+                        setInputStatuses({
+                          ...inputStatuses,
+                          [product.id]: e.target.value,
+                        })
+                      }
+                      onBlur={() => handleStatusChange(product.id)}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="purchased">Purchased</option>
+                      <option value="fulfilled">Fulfilled</option>
+                    </Form.Select>
+                  ) : (
+                    product.status
+                  )}
                 </td>
-
                 {userInfo?.role === "admin" && (
                   <td>
                     <Form.Check
@@ -240,7 +233,7 @@ const RequestedProductsPage = () => {
         </Table>
       )}
 
-      {/* Pagination controls */}
+      {/* Pagination */}
       <Pagination className="justify-content-center mt-4">
         {[...Array(totalPages).keys()].map((number) => (
           <Pagination.Item
@@ -253,7 +246,7 @@ const RequestedProductsPage = () => {
         ))}
       </Pagination>
 
-      {/* Modal for adding product */}
+      {/* ✅ Modal for adding a product */}
       <Modal show={showModal} onHide={handleCloseModal} centered>
         <Modal.Header closeButton>
           <Modal.Title>Add Requested Product</Modal.Title>
@@ -262,21 +255,22 @@ const RequestedProductsPage = () => {
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
           <Form>
-            <Form.Group controlId="productName">
+            <Form.Group controlId="name">
               <Form.Label>Product Name</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Enter product name"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
               />
             </Form.Group>
+
             <Form.Group controlId="description">
-              <Form.Label>Product Name</Form.Label>
+              <Form.Label>Description</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Enter product description"
+                placeholder="Enter description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required

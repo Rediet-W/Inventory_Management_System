@@ -29,6 +29,7 @@
     "react-calendar": "^5.1.0",
     "react-chartjs-2": "^5.2.0",
     "react-export-table": "^3.1.7",
+    "react-to-print": "^3.0.5",
     "sequelize": "^6.37.4"
   },
   "devDependencies": {

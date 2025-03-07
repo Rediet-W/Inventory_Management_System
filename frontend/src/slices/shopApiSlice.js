@@ -1,8 +1,6 @@
 import { apiSlice } from "./apiSlice";
-
 export const shopApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // ✅ Fetch shop products
     getShopProducts: builder.query({
       query: ({ start, end } = {}) => {
         const queryParams = start && end ? `?start=${start}&end=${end}` : "";
@@ -24,7 +22,40 @@ export const shopApi = apiSlice.injectEndpoints({
       providesTags: ["Shop"],
     }),
 
-    // ✅ Add new shop item
+    getProductByBatchNumber: builder.query({
+      query: (batchNumber) => `/api/shop/batch/${batchNumber}`,
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error(
+            `❌ Failed to fetch product with batch number ${batchNumber}:`,
+            response.message
+          );
+          throw new Error(
+            response.message || "Error fetching product by batch"
+          );
+        }
+        return response.data;
+      },
+      providesTags: ["Shop"],
+    }),
+
+    getProductsByName: builder.query({
+      query: (name) => `/api/shop/name/${name}`,
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error(
+            `❌ Failed to fetch products with name ${name}:`,
+            response.message
+          );
+          throw new Error(
+            response.message || "Error fetching products by name"
+          );
+        }
+        return response.data;
+      },
+      providesTags: ["Shop"],
+    }),
+
     addToShop: builder.mutation({
       query: (newShopItem) => ({
         url: "/api/shop",
@@ -44,7 +75,6 @@ export const shopApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Shop"],
     }),
 
-    // ✅ Update a product in the shop
     updateProductInShop: builder.mutation({
       query: ({ id, updatedProduct }) => ({
         url: `/api/shop/${id}`,
@@ -64,7 +94,6 @@ export const shopApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Shop"],
     }),
 
-    // ✅ Delete a product from the shop
     deleteProduct: builder.mutation({
       query: (id) => ({
         url: `/api/shop/${id}`,
@@ -84,6 +113,8 @@ export const shopApi = apiSlice.injectEndpoints({
 
 export const {
   useGetShopProductsQuery,
+  useGetProductByBatchNumberQuery,
+  useGetProductsByNameQuery,
   useAddToShopMutation,
   useUpdateProductInShopMutation,
   useDeleteProductMutation,

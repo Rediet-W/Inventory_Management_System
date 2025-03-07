@@ -20,9 +20,6 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-/**
- * Enhanced baseQuery to handle new API response format
- */
 const baseQueryWithInterceptor = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
 

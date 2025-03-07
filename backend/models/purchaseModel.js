@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/db.js";
-import Product from "./productModel.js";
+
 const Purchase = sequelize.define(
   "Purchase",
   {
@@ -10,40 +10,45 @@ const Purchase = sequelize.define(
       primaryKey: true,
       allowNull: false,
     },
-    product_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: Product,
-        key: "id",
-      },
-      onDelete: "SET NULL",
+    name: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+    },
+    batchNumber: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+    },
+    unitOfMeasurement: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
     },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    product_name: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-    },
-    buying_price: {
+    unitCost: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    purchase_date: {
-      type: DataTypes.DATEONLY,
+    totalCost: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+    },
+    averageCost: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    user_name: {
+    purchaser: {
       type: DataTypes.STRING(255),
       allowNull: false,
+    },
+    reference: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
   },
   {
     timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
   }
 );
 

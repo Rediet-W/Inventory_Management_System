@@ -1,7 +1,17 @@
 import React, { useState, useMemo } from "react";
 import { useGetSalesByDateRangeQuery } from "../slices/salesApiSlice";
 import { useGetPurchasesByDateRangeQuery } from "../slices/purchaseApiSlice";
-import { Nav, Tab, Form, Button, Alert, Card, Row, Col } from "react-bootstrap";
+import {
+  Nav,
+  Tab,
+  Form,
+  Button,
+  Alert,
+  Card,
+  Row,
+  Col,
+  Table,
+} from "react-bootstrap";
 import { FaDownload } from "react-icons/fa";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -14,6 +24,7 @@ const SummaryPage = () => {
   const [applyFilters, setApplyFilters] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Fetch sales & purchases within the date range
   const { data: sales } = useGetSalesByDateRangeQuery(
     applyFilters && startDate && endDate ? { startDate, endDate } : {},
     { skip: !applyFilters }
@@ -23,20 +34,23 @@ const SummaryPage = () => {
     applyFilters && startDate && endDate ? { startDate, endDate } : {},
     { skip: !applyFilters }
   );
-
+  console.log("purchases", purchases);
+  console.log("sales", sales);
+  // Calculate total sales amount
   const totalSales = useMemo(() => {
     return (
       sales?.reduce(
-        (total, sale) => total + sale.selling_price * sale.quantity_sold,
+        (total, sale) => total + sale.unitSellingPrice * sale.quantity,
         0
       ) || 0
     );
   }, [sales]);
 
+  // Calculate total purchase amount
   const totalPurchases = useMemo(() => {
     return (
-      purchases?.reduce(
-        (total, purchase) => total + purchase.buying_price * purchase.quantity,
+      purchases?.data?.reduce(
+        (total, purchase) => total + purchase.unitCost * purchase.quantity,
         0
       ) || 0
     );
@@ -156,37 +170,34 @@ const SummaryPage = () => {
               </button>
             </div>
             <div id="sales-section">
-              <table className="table table-hover">
-                <thead className="table-dark">
+              <Table striped bordered hover responsive className="mt-3">
+                <thead className="">
                   <tr>
                     <th>Date</th>
-                    <th>Product Name</th>
-                    <th>Selling Price per unit</th>
-                    <th>Quantity Sold</th>
-                    <th>Amount(ETB)</th>
-                    <th>Sold By</th>
+                    <th>Name</th>
+                    <th>Quantity</th>
+                    <th>Unit Selling Price</th>
+                    <th>Total Selling Price</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sales?.map((sale, index) => (
                     <tr key={index}>
                       <td>
-                        {sale?.sale_date?.split("T")[0] || "Unknown Date"}
+                        {sale?.createdAt?.split("T")[0] || "Unknown Date"}
                       </td>
-                      <td>{sale.product_name || "Unknown Product"}</td>
-                      <td>{sale.selling_price} </td>
-                      <td>{sale.quantity_sold}</td>
-                      <td>{sale.quantity_sold * sale.selling_price} </td>
-                      <td>{sale.user_name || "Unknown"}</td>
+                      <td>{sale.name || "Unknown Product"}</td>
+                      <td>{sale.quantity}</td>
+                      <td>{sale.unitSellingPrice} ETB</td>
+                      <td>{sale.quantity * sale.unitSellingPrice} ETB</td>
                     </tr>
                   ))}
                   <tr className="fw-bold">
                     <td colSpan="4">Total</td>
                     <td>{totalSales} ETB</td>
-                    <td></td>
                   </tr>
                 </tbody>
-              </table>
+              </Table>
             </div>
           </Tab.Pane>
 
@@ -203,38 +214,34 @@ const SummaryPage = () => {
               </button>
             </div>
             <div id="purchases-section">
-              <table className="table table-hover">
-                <thead className="table-dark">
+              <Table striped bordered hover responsive className="mt-3">
+                <thead className="">
                   <tr>
                     <th>Date</th>
-                    <th>Product Name</th>
-                    <th>Buying Price per unit</th>
+                    <th>Name</th>
                     <th>Quantity</th>
-                    <th>Amount(ETB)</th>
-                    <th>Purchased By</th>
+                    <th>Unit Cost</th>
+                    <th>Total Cost</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {purchases?.map((purchase, index) => (
+                  {purchases?.data?.map((purchase, index) => (
                     <tr key={index}>
                       <td>
-                        {purchase?.purchase_date?.split("T")[0] ||
-                          "Unknown Date"}
+                        {purchase?.createdAt?.split("T")[0] || "Unknown Date"}
                       </td>
-                      <td>{purchase.product_name || "Unknown Product"}</td>
-                      <td>{purchase.buying_price} ETB</td>
+                      <td>{purchase.name || "Unknown Product"}</td>
                       <td>{purchase.quantity}</td>
-                      <td>{purchase.quantity * purchase.buying_price} </td>
-                      <td>{purchase.user_name || "Unknown"}</td>
+                      <td>{purchase.unitCost} ETB</td>
+                      <td>{purchase.quantity * purchase.unitCost} ETB</td>
                     </tr>
                   ))}
                   <tr className="fw-bold">
                     <td colSpan="4">Total</td>
                     <td>{totalPurchases} ETB</td>
-                    <td></td>
                   </tr>
                 </tbody>
-              </table>
+              </Table>
             </div>
           </Tab.Pane>
         </Tab.Content>

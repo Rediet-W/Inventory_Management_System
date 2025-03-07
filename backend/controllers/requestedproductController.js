@@ -5,9 +5,7 @@ const sendResponse = (res, success, message, data = null, errors = []) => {
   res.status(success ? 200 : 400).json({ success, message, data, errors });
 };
 
-// @desc    Get all requested products
-// @route   GET /api/requested-products
-// @access  Private (Authenticated users)
+// ✅ Get all requested products
 export const getRequestedProducts = asyncHandler(async (req, res) => {
   try {
     const requestedProducts =
@@ -26,19 +24,18 @@ export const getRequestedProducts = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Create a new requested product
-// @route   POST /api/requested-products
-// @access  Private (Users)
+// ✅ Create a requested product (supports status field)
 export const createRequestedProduct = asyncHandler(async (req, res) => {
   try {
-    const { product_name, description, quantity = 1 } = req.body;
+    const { name, description, quantity = 1, status = "pending" } = req.body;
     const errors = [];
 
-    //  Input validation
-    if (!product_name) errors.push("Product name is required");
+    if (!name) errors.push("Product name is required");
     if (!description) errors.push("Description is required");
     if (quantity <= 0 || isNaN(quantity))
       errors.push("Quantity must be a valid number greater than 0");
+    if (!["pending", "purchased", "fulfilled"].includes(status))
+      errors.push("Invalid status value");
 
     if (errors.length > 0) {
       return sendResponse(
@@ -66,34 +63,40 @@ export const createRequestedProduct = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Update requested product quantity
-// @route   PATCH /api/requested-products/:id
-// @access  Private (Users)
+// ✅ Update requested product (quantity or status)
 export const updateRequestedProduct = asyncHandler(async (req, res) => {
   try {
-    const { quantity } = req.body;
+    const { quantity, status } = req.body;
     const requestedProductId = req.params.id;
     const errors = [];
 
     if (!requestedProductId) errors.push("Requested product ID is required");
-    if (!quantity || isNaN(quantity) || quantity <= 0)
+
+    if (quantity !== undefined && (isNaN(quantity) || quantity <= 0)) {
       errors.push("Quantity must be a valid number greater than 0");
+    }
+    if (
+      status !== undefined &&
+      !["pending", "purchased", "fulfilled"].includes(status)
+    ) {
+      errors.push("Invalid status value");
+    }
 
     if (errors.length > 0) {
       return sendResponse(res, false, "Invalid update input", null, errors);
     }
 
-    const requestedProduct =
-      await requestedProductService.updateRequestedProduct(
-        requestedProductId,
-        quantity
-      );
-    if (requestedProduct) {
+    const updatedProduct = await requestedProductService.updateRequestedProduct(
+      requestedProductId,
+      { quantity, status }
+    );
+
+    if (updatedProduct) {
       sendResponse(
         res,
         true,
         "Requested product updated successfully",
-        requestedProduct
+        updatedProduct
       );
     } else {
       sendResponse(res, false, "Requested product not found", null, [
@@ -101,16 +104,14 @@ export const updateRequestedProduct = asyncHandler(async (req, res) => {
       ]);
     }
   } catch (error) {
-    console.error(" Error updating requested product:", error);
+    console.error("Error updating requested product:", error);
     sendResponse(res, false, "Failed to update requested product", null, [
       error.message,
     ]);
   }
 });
 
-// @desc    Delete a requested product
-// @route   DELETE /api/requested-products/:id
-// @access  Private (Users/Admins)
+// ✅ Delete a requested product
 export const deleteRequestedProduct = asyncHandler(async (req, res) => {
   try {
     const requestedProductId = req.params.id;
@@ -135,7 +136,7 @@ export const deleteRequestedProduct = asyncHandler(async (req, res) => {
       ]);
     }
   } catch (error) {
-    console.error(" Error deleting requested product:", error);
+    console.error("Error deleting requested product:", error);
     sendResponse(res, false, "Failed to delete requested product", null, [
       error.message,
     ]);

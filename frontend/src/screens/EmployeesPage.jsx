@@ -52,7 +52,7 @@ const EmployeesPage = () => {
       {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
       <table className="table table-striped table-hover table-bordered shadow-sm">
-        <thead className="table-dark">
+        <thead className="">
           <tr>
             <th>Name</th>
             <th>Email</th>

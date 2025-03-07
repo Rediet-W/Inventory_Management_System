@@ -44,26 +44,76 @@ export const getProductById = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get product by batch number
+// @route   GET /api/products/batch/:batchNumber
+// @access  Private (Authenticated users)
+export const getProductByBatchNumber = asyncHandler(async (req, res) => {
+  try {
+    const { batchNumber } = req.params;
+
+    if (!batchNumber) {
+      return sendResponse(res, false, "Batch number is required", null, [
+        "Missing batch number",
+      ]);
+    }
+
+    const product = await productService.getProductByBatchNumber(batchNumber);
+    if (product) {
+      sendResponse(res, true, "Product retrieved successfully", product);
+    } else {
+      sendResponse(res, false, "Product not found", null, [
+        `No product found with batch number: ${batchNumber}`,
+      ]);
+    }
+  } catch (error) {
+    console.error("❌ Error fetching product by batch number:", error);
+    sendResponse(res, false, "Failed to fetch product", null, [error.message]);
+  }
+});
+
 // @desc    Create a new product
 // @route   POST /api/products
 // @access  Private (Admin only)
 export const createProduct = asyncHandler(async (req, res) => {
   try {
-    const { name, buyingPrice, sellingPrice, batchNumber } = req.body;
+    const {
+      name,
+      batchNumber,
+      quantity,
+      unitCost,
+      unitOfMeasurement,
+      reorderLevel,
+    } = req.body;
     const errors = [];
 
+    // 📌 Input validation
     if (!name) errors.push("Product name is required");
     if (!batchNumber) errors.push("Batch number is required");
-    if (!buyingPrice || isNaN(buyingPrice))
-      errors.push("Buying price must be a valid number");
-    if (!sellingPrice || isNaN(sellingPrice))
-      errors.push("Selling price must be a valid number");
+    if (!quantity || isNaN(quantity) || quantity <= 0)
+      errors.push("Quantity must be a valid positive number");
+    if (!unitCost || isNaN(unitCost) || unitCost <= 0)
+      errors.push("Unit cost must be a valid positive number");
+    if (!unitOfMeasurement) errors.push("Unit of measurement is required");
 
     if (errors.length > 0) {
       return sendResponse(res, false, "Invalid input", null, errors);
     }
 
-    const product = await productService.createProduct(req.body);
+    // 📌 Remove average cost calculation
+    const finalReorderLevel = reorderLevel || 1;
+    const sellingPrice = unitCost * 1.1; // Default markup
+
+    // 📌 Create product (without average cost)
+    const product = await productService.createProduct({
+      name,
+      batchNumber,
+      quantity,
+      unitCost,
+      unitOfMeasurement,
+      reorderLevel: finalReorderLevel,
+      sellingPrice,
+    });
+
     sendResponse(res, true, "Product created successfully", product);
   } catch (error) {
     console.error("❌ Error creating product:", error);
@@ -77,31 +127,77 @@ export const createProduct = asyncHandler(async (req, res) => {
 export const updateProduct = asyncHandler(async (req, res) => {
   try {
     const productId = req.params.id;
-    const { name, buyingPrice, sellingPrice, batchNumber } = req.body;
+    const {
+      name,
+      batchNumber,
+      quantity,
+      unitCost,
+      sellingPrice,
+      unitOfMeasurement,
+      remark,
+      reorderLevel,
+    } = req.body;
     const errors = [];
-    // 📌 Input validation
-    if (!name) errors.push("Product name is required");
-    if (!batchNumber) errors.push("Batch number is required");
-    if (!buyingPrice || isNaN(buyingPrice))
-      errors.push("Buying price must be a valid number");
-    if (!sellingPrice || isNaN(sellingPrice))
+
+    // 📌 Check if product exists
+    const product = await productService.getProductById(productId);
+    if (!product) {
+      return sendResponse(res, false, "Product not found", null, [
+        "Invalid product ID",
+      ]);
+    }
+
+    // 📌 Input validation (only check if fields exist in request)
+    if (name && name.trim() === "") errors.push("Product name cannot be empty");
+    if (batchNumber && batchNumber.trim() === "")
+      errors.push("Batch number cannot be empty");
+    if (quantity !== undefined && (isNaN(quantity) || quantity <= 0))
+      errors.push("Quantity must be a valid positive number");
+    if (unitCost !== undefined && (isNaN(unitCost) || unitCost <= 0))
+      errors.push("Unit cost must be a valid positive number");
+    if (sellingPrice !== undefined && (isNaN(sellingPrice) || sellingPrice < 0))
       errors.push("Selling price must be a valid number");
+    if (unitOfMeasurement && unitOfMeasurement.trim() === "")
+      errors.push("Unit of measurement cannot be empty");
 
     if (errors.length > 0) {
       return sendResponse(res, false, "Invalid input", null, errors);
     }
 
+    // Prepare updated values (only update if provided)
+    const updatedData = {
+      ...(name && { name }),
+      ...(batchNumber && { batchNumber }),
+      ...(quantity !== undefined && { quantity }),
+      ...(unitCost !== undefined && { unitCost }),
+      ...(sellingPrice !== undefined && { sellingPrice }),
+      ...(unitOfMeasurement && { unitOfMeasurement }),
+      ...(remark && { remark }),
+      ...(reorderLevel !== undefined && { reorderLevel }),
+    };
+
+    // If quantity or unitCost is updated, recalculate totalCost and averageCost
+    if (quantity !== undefined || unitCost !== undefined) {
+      const prevQuantity = product.quantity;
+      const prevTotalCost = product.totalCost;
+
+      const newQuantity = quantity !== undefined ? quantity : prevQuantity;
+      const newUnitCost = unitCost !== undefined ? unitCost : product.unitCost;
+      const newTotalCost = newQuantity * newUnitCost;
+
+      // Calculate new average cost
+      updatedData.totalCost = newTotalCost;
+      updatedData.averageCost =
+        (prevTotalCost + newTotalCost) / (prevQuantity + newQuantity);
+    }
+
+    // Perform update
     const updatedProduct = await productService.updateProduct(
       productId,
-      req.body
+      updatedData
     );
-    if (updatedProduct) {
-      sendResponse(res, true, "Product updated successfully", updatedProduct);
-    } else {
-      sendResponse(res, false, "Product not found", null, [
-        "Invalid product ID",
-      ]);
-    }
+
+    sendResponse(res, true, "Product updated successfully", updatedProduct);
   } catch (error) {
     console.error("❌ Error updating product:", error);
     sendResponse(res, false, "Failed to update product", null, [error.message]);

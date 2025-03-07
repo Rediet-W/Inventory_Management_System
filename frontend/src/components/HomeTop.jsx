@@ -2,11 +2,13 @@ import React from "react";
 import { Card, Row, Col } from "react-bootstrap";
 import { useGetProductsQuery } from "../slices/productApiSlice";
 import { useGetShopProductsQuery } from "../slices/shopApiSlice";
+import { FaBox, FaExclamationTriangle, FaStore } from "react-icons/fa";
 
 const HomeTop = () => {
   // Fetch store products
   const { data: products, isLoading, error } = useGetProductsQuery();
 
+  // Fetch shop products
   const {
     data: shops,
     isLoading: shopLoading,
@@ -18,64 +20,55 @@ const HomeTop = () => {
   if (error) return <div>Error loading store products</div>;
   if (shopError) return <div>Error loading shop products</div>;
 
-  const { allProducts = [], lowStockProducts = [] } = shops || {};
+  const { allProducts = [] } = shops || {};
 
-  const totalStoreValue = products.reduce(
-    (total, product) => total + product.buyingPrice * product.quantity,
-    0
-  );
+  // Count products in store with non-zero quantity
+  const totalProductsInStore = products.filter(
+    (product) => product.quantity > 0
+  ).length;
 
-  const totalShopValue = allProducts.reduce(
-    (total, inshop) => total + inshop.buying_price * inshop.quantity,
-    0
-  );
+  // Count low stock products (quantity <= reorderLevel)
+  const lowStockProductsCount = products.filter(
+    (product) => product.quantity <= product.reorderLevel
+  ).length;
 
-  const totalItems = products.length;
-  // Filter low stock items in store
-  const lowStockProductsInStore = products.filter(
-    (product) => product.quantity < 3
-  );
+  // Count items in shop (length of shop products)
+  const totalItemsInShop = allProducts.length;
+
+  const cardData = [
+    {
+      icon: <FaBox size={30} />,
+      number: totalProductsInStore,
+      title: "Products in Store",
+    },
+    {
+      icon: <FaExclamationTriangle size={30} />,
+      number: lowStockProductsCount,
+      title: "Low Stock Products",
+    },
+    {
+      icon: <FaStore size={30} />,
+      number: totalItemsInShop,
+      title: "Items in Shop",
+    },
+  ];
 
   return (
     <Row className="g-4">
-      {/* Total Store Value Card */}
-      <Col xs={12} md={4}>
-        <Card className="text-center shadow-sm">
-          <Card.Body>
-            <Card.Title>Total Store Value</Card.Title>
-            <Card.Text className="h4">{`${totalStoreValue} ETB`}</Card.Text>
-          </Card.Body>
-        </Card>
-      </Col>
-
-      {/* Current Shop Value Card */}
-      <Col xs={12} md={4}>
-        <Card className="text-center shadow-sm">
-          <Card.Body>
-            <Card.Title>Current Shop Value</Card.Title>
-            <Card.Text className="h4">{`${totalShopValue} ETB`}</Card.Text>
-          </Card.Body>
-        </Card>
-      </Col>
-
-      {/* Low Stock Items Card */}
-      <Col xs={12} md={4}>
-        <Card className="text-center shadow-sm">
-          <Card.Body>
-            <Card.Title>Low Stock Items in shop</Card.Title>
-            <Card.Text className="h4">
-              {shops.lowStockProducts.length}
-            </Card.Text>
-            {lowStockProductsInStore.length > 0 && (
-              <Card.Text className="text-muted">
-                {lowStockProductsInStore
-                  .map((product) => product.name)
-                  .join(", ")}
-              </Card.Text>
-            )}
-          </Card.Body>
-        </Card>
-      </Col>
+      {cardData.map((item, index) => (
+        <Col xs={12} md={4} key={index} className="rounded-full ">
+          <Card
+            className="text-center shadow-sm rounded-full "
+            style={{ backgroundColor: "white", color: "#007bff" }}
+          >
+            <Card.Body>
+              <div className="mb-2">{item.icon}</div>
+              <Card.Text className="h3 fw-bold">{item.number}</Card.Text>
+              <Card.Title>{item.title}</Card.Title>
+            </Card.Body>
+          </Card>
+        </Col>
+      ))}
     </Row>
   );
 };

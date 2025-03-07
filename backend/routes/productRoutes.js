@@ -2,6 +2,7 @@ import express from "express";
 import {
   getProducts,
   getProductById,
+  getProductByBatchNumber,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -13,6 +14,8 @@ import { admin } from "../middleware/adminMiddleware.js";
 const router = express.Router();
 
 router.route("/byDate").get(protect, getProductsByDate);
+
+router.route("/batch/:batchNumber").get(getProductByBatchNumber);
 
 router.route("/").get(getProducts).post(protect, admin, createProduct);
 router

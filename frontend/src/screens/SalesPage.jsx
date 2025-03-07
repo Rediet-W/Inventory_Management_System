@@ -1,348 +1,250 @@
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  useGetSalesByDateQuery,
-  useAddSaleMutation,
-  useDeleteSaleMutation,
-  useEditSaleMutation,
-} from "../slices/salesApiSlice";
+import React, { useState, useEffect } from "react";
+import { Table, Button, Row, Col, Form, Alert } from "react-bootstrap";
 import { useGetShopProductsQuery } from "../slices/shopApiSlice";
-import { useSelector, useDispatch } from "react-redux";
+import { useAddSaleMutation } from "../slices/salesApiSlice";
 import { triggerRefresh } from "../slices/refreshSlice";
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Table,
-  Button,
-  Form,
-  Alert,
-  Pagination,
-} from "react-bootstrap";
-import { format } from "date-fns";
+import { useSelector, useDispatch } from "react-redux";
+import { saveAs } from "file-saver";
+import * as XLSX from "xlsx";
 
 const SalesPage = () => {
   const dispatch = useDispatch();
-  const refreshKey = useSelector((state) => state.refresh.refreshKey);
+  const { data: shopData, isLoading, error } = useGetShopProductsQuery();
+  const [addSale, { isLoading: isSubmitting }] = useAddSaleMutation();
+
+  const [sales, setSales] = useState([]);
+  const [errorMessage, setErrorMessage] = useState(null);
   const { userInfo } = useSelector((state) => state.auth);
-
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [saleDate, setSaleDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [errorMessage, setErrorMessage] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
-  const { data: shopProducts = { allProducts: [] } } =
-    useGetShopProductsQuery();
-  const { data: sales = [], refetch } = useGetSalesByDateQuery(saleDate, {
-    skip: !saleDate,
-  });
-
-  const [addSale] = useAddSaleMutation();
-  const [deleteSale] = useDeleteSaleMutation();
-  const [editSale] = useEditSaleMutation();
+  const [date] = useState(new Date().toISOString().split("T")[0]);
 
   useEffect(() => {
-    refetch();
-  }, [refreshKey, refetch]);
-
-  const handleAddSale = async () => {
-    setErrorMessage("");
-
-    if (!selectedProduct) {
-      setErrorMessage("Please select a product.");
-      return;
+    if (shopData?.allProducts?.length > 0) {
+      setSales([
+        {
+          id: Date.now(),
+          product: "",
+          batchNumber: "",
+          unitOfMeasurement: "",
+          sellingPrice: "",
+          qty: 0,
+          quantitySold: "",
+          totalSellingPrice: "",
+        },
+      ]);
     }
+  }, [shopData]);
 
-    if (!quantity || isNaN(quantity) || quantity <= 0) {
-      setErrorMessage("Quantity must be greater than 0.");
-      return;
-    }
+  const handleAddRow = () => {
+    setSales([
+      ...sales,
+      {
+        id: Date.now(),
+        product: "",
+        batchNumber: "",
+        unitOfMeasurement: "",
+        sellingPrice: "",
+        qty: 0,
+        quantitySold: "",
+        totalSellingPrice: "",
+      },
+    ]);
+  };
 
-    const productExists = shopProducts.allProducts.some(
-      (product) => product.id === selectedProduct.id
+  const handleRemoveRow = (id) => {
+    setSales(sales.filter((sale) => sale.id !== id));
+  };
+
+  const handleProductSelect = (id, selectedProduct) => {
+    const product = shopData.allProducts.find(
+      (p) => p.name === selectedProduct
     );
+    setSales((prev) =>
+      prev.map((sale) =>
+        sale.id === id
+          ? {
+              ...sale,
+              product: selectedProduct,
+              batchNumber: product.batchNumber,
+              unitOfMeasurement: product.unitOfMeasurement,
+              sellingPrice: product.sellingPrice,
+              qty: product.quantity,
+              quantitySold: "",
+              totalSellingPrice: "",
+            }
+          : sale
+      )
+    );
+  };
 
-    if (!productExists) {
-      setErrorMessage(
-        "The selected product is no longer available in the shop."
-      );
-      return;
-    }
+  const handleQuantityChange = (id, value) => {
+    setSales((prev) =>
+      prev.map((sale) =>
+        sale.id === id
+          ? {
+              ...sale,
+              quantitySold: value,
+              totalSellingPrice: value * sale.sellingPrice || 0,
+            }
+          : sale
+      )
+    );
+  };
 
-    if (quantity > selectedProduct.quantity) {
+  const handleSubmit = async () => {
+    const invalidSales = sales.filter(
+      (s) => s.quantitySold > s.qty || s.quantitySold <= 0
+    );
+    if (invalidSales.length > 0) {
       setErrorMessage(
-        `Can't sell more than available in shop (${selectedProduct.quantity} units).`
+        "❌ Ensure sale quantity is valid and does not exceed available stock."
       );
+      setTimeout(() => setErrorMessage(null), 5000);
       return;
     }
 
     try {
-      await addSale({
-        product_id: selectedProduct.id,
-        quantity_sold: quantity,
-        user_name: userInfo?.name,
-      }).unwrap();
+      await Promise.all(
+        sales.map((sale) =>
+          addSale({
+            name: sale.product,
+            batchNumber: sale.batchNumber,
+            unitOfMeasurement: sale.unitOfMeasurement,
+            sellingPrice: sale.sellingPrice,
+            quantity: Number(sale.quantitySold),
+            reference: "Sale",
+            seller: userInfo.name,
+          }).unwrap()
+        )
+      );
 
-      alert("Sale added successfully");
+      alert("✅ Sales recorded successfully!");
       dispatch(triggerRefresh());
-      setSelectedProduct(null);
-      setQuantity(1);
+      setSales([]);
+      setErrorMessage(null);
     } catch (error) {
-      setErrorMessage(error?.data?.message || "Error adding sale");
+      setErrorMessage("❌ Failed to record sales.");
     }
   };
 
-  const handleEdit = (sale) => {
-    const newQuantity = prompt(
-      "Enter new quantity for the sale:",
-      sale.quantity_sold
-    );
-    if (newQuantity && !isNaN(newQuantity) && newQuantity > 0) {
-      editSale({ saleId: sale.id, saleData: { quantitySold: newQuantity } })
-        .unwrap()
-        .then(() => {
-          alert("Sale updated successfully");
-          dispatch(triggerRefresh());
-        })
-        .catch(() => alert("Error updating sale"));
-    }
+  const handleDownload = () => {
+    const exportData = sales.map((s) => ({
+      "No.": sales.indexOf(s) + 1,
+      Product: s.product,
+      "Batch No.": s.batchNumber,
+      UOM: s.unitOfMeasurement,
+      "Selling Price": s.sellingPrice,
+      "Qty in Store": s.qty,
+      "Qty Sold": s.quantitySold,
+      "Total Selling Price": s.totalSellingPrice,
+      Cashier: userInfo.name,
+      Date: date,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const data = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+    });
+    saveAs(data, "Sales.xlsx");
   };
 
-  const handleDelete = async (saleId) => {
-    if (window.confirm("Are you sure you want to delete this sale?")) {
-      try {
-        await deleteSale(saleId).unwrap();
-        alert("Sale deleted successfully");
-        dispatch(triggerRefresh());
-      } catch (error) {
-        alert("Error deleting sale");
-      }
-    }
-  };
-
-  const handleSearch = (e) => {
-    const searchValue = e.target.value.toLowerCase();
-    setSearchResults([]);
-
-    if (searchValue.trim() === "") {
-      setSearchResults([]);
-      return;
-    }
-
-    const results = shopProducts?.allProducts?.filter((product) =>
-      product.product_name.toLowerCase().includes(searchValue)
-    );
-
-    setSearchResults(results);
-  };
-  useEffect(() => {
-    setSelectedProduct(null);
-  }, [searchResults]);
-
-  const totalSalesETB = useMemo(() => {
-    return sales?.reduce(
-      (total, sale) => total + sale.selling_price * sale.quantity_sold,
-      0
-    );
-  }, [sales]);
-
-  const sortedSales = sales
-    ?.slice()
-    .sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date));
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentSales = sortedSales?.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil((sortedSales?.length || 0) / itemsPerPage);
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <Alert variant="danger">Error loading products</Alert>;
 
   return (
-    <Container className="mt-4">
-      <h1 className="text-center mb-4">Sales Page</h1>
+    <div className="container mt-5">
+      <h3 className="text-center">Sales Entry</h3>
+      <h4 className="text-center">Date: {date}</h4>
 
-      <Row className="justify-content-center mb-4">
-        <Col md={8}>
-          <Card className="shadow-sm text-center">
-            <Card.Body>
-              <Card.Title>Sales Summary</Card.Title>
-              <Card.Text>
-                Date:{" "}
-                <strong>{format(new Date(saleDate), "dd/MM/yyyy")}</strong>
-              </Card.Text>
-              <Card.Text>
-                Total Sales:{" "}
-                <strong>
-                  {totalSalesETB ? `${totalSalesETB} ETB` : "No sales yet"}
-                </strong>
-              </Card.Text>
-            </Card.Body>
-          </Card>
+      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+
+      <Row className="mb-3 mt-3">
+        <Col md={9}>
+          <Button variant="primary" onClick={handleAddRow}>
+            + Add Row
+          </Button>
+        </Col>
+        <Col md={3} className="text-end">
+          <Button
+            variant="success"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Processing..." : "Submit Sales"}
+          </Button>
+          <Button variant="info" className="ms-2" onClick={handleDownload}>
+            Download
+          </Button>
         </Col>
       </Row>
 
-      {userInfo?.role == "user" && (
-        <Row className="justify-content-center mb-4">
-          <Col md={8}>
-            <Card className="shadow-sm">
-              <Card.Body>
-                <h2 className="text-center mb-4">Add Sale</h2>
-                {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-
-                <Form.Group className="mb-3">
-                  <Form.Control
-                    type="text"
-                    placeholder="Search product by name"
-                    onChange={handleSearch}
-                  />
-                </Form.Group>
-
-                {!selectedProduct &&
-                  searchResults?.map((product) => (
-                    <div
-                      key={product.id}
-                      onClick={() => setSelectedProduct(product)}
-                      style={{
-                        cursor: "pointer",
-                        borderBottom: "1px solid #ddd",
-                        padding: "5px",
-                      }}
-                    >
-                      {product.product_name}
-                    </div>
+      <Table striped bordered hover responsive className="table-sm mt-3">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Product</th>
+            <th>Batch No.</th>
+            <th>UOM</th>
+            <th>Selling Price per unit</th>
+            <th>Qty in Store</th>
+            <th>Qty Sold</th>
+            <th>Total Selling Price</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sales.map((sale, index) => (
+            <tr key={sale.id}>
+              <td>{index + 1}</td>
+              <td>
+                <Form.Select
+                  value={sale.product}
+                  onChange={(e) => handleProductSelect(sale.id, e.target.value)}
+                  style={{ fontSize: "0.9rem" }}
+                >
+                  <option value="">Select Product</option>
+                  {shopData.allProducts.map((product) => (
+                    <option key={product.batchNumber} value={product.name}>
+                      {product.name}
+                    </option>
                   ))}
-
-                {selectedProduct && (
-                  <div className="selected-product-info mt-3">
-                    <p>
-                      <strong>Selected Product:</strong>{" "}
-                      {selectedProduct?.product_name}
-                    </p>
-                    <p>
-                      <strong>Available Stock:</strong>{" "}
-                      {selectedProduct?.quantity} units
-                    </p>
-                    <p>
-                      <strong>Selling Price:</strong>{" "}
-                      {selectedProduct?.selling_price} ETB
-                    </p>
-
-                    <Form.Group controlId="quantity" className="mb-3">
-                      <Form.Label>Quantity</Form.Label>
-                      <Form.Control
-                        type="number"
-                        min="1"
-                        value={quantity}
-                        onChange={(e) => setQuantity(e.target.value)}
-                      />
-                    </Form.Group>
-
-                    <Button
-                      className="w-100"
-                      variant="primary"
-                      onClick={handleAddSale}
-                    >
-                      Add Sale
-                    </Button>
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      )}
-      <Row className="justify-content-center mb-4">
-        <Col md={8}>
-          <Form.Group className="text-center">
-            <Form.Label>Select Date</Form.Label>
-            <Form.Control
-              type="date"
-              value={saleDate}
-              onChange={(e) => setSaleDate(e.target.value)}
-              className="text-center"
-            />
-          </Form.Group>
-        </Col>
-      </Row>
-      <Row className="justify-content-center">
-        <Col md={10}>
-          <Table striped bordered hover className="shadow-sm">
-            <thead className="table-dark">
-              <tr>
-                <th>Date</th>
-                <th>Product Name</th>
-                <th>Quantity Sold</th>
-                <th>Selling Price per unit</th>
-                {userInfo?.role === "admin" && <th>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {!sales ? (
-                <tr>
-                  <td
-                    colSpan={userInfo?.role === "admin" ? 5 : 4}
-                    className="text-center"
-                  >
-                    Please select a date to view sales.
-                  </td>
-                </tr>
-              ) : currentSales.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={userInfo?.role === "admin" ? 5 : 4}
-                    className="text-center"
-                  >
-                    No sales available for the selected date.
-                  </td>
-                </tr>
-              ) : (
-                currentSales.map((sale) => (
-                  <tr key={sale.id}>
-                    <td>{format(new Date(sale.sale_date), "dd/MM/yyyy")}</td>
-                    <td>{sale?.product_name}</td>
-                    <td>{sale?.quantity_sold}</td>
-                    <td>{sale?.selling_price} ETB</td>
-                    {userInfo?.role === "admin" && (
-                      <td>
-                        <Button
-                          variant="warning"
-                          className="btn-sm me-2"
-                          onClick={() => handleEdit(sale)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="danger"
-                          className="btn-sm"
-                          onClick={() => handleDelete(sale.id)}
-                        >
-                          Delete
-                        </Button>
-                      </td>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </Table>
-
-          {/* Pagination controls */}
-          <Pagination className="justify-content-center mt-4">
-            {[...Array(totalPages).keys()].map((number) => (
-              <Pagination.Item
-                key={number + 1}
-                active={number + 1 === currentPage}
-                onClick={() => handlePageChange(number + 1)}
-              >
-                {number + 1}
-              </Pagination.Item>
-            ))}
-          </Pagination>
-        </Col>
-      </Row>
-    </Container>
+                </Form.Select>
+              </td>
+              <td>{sale.batchNumber}</td>
+              <td>{sale.unitOfMeasurement}</td>
+              <td>{sale.sellingPrice}</td>
+              <td>{sale.qty}</td>
+              <td>
+                <Form.Control
+                  type="number"
+                  value={sale.quantitySold}
+                  onChange={(e) =>
+                    handleQuantityChange(sale.id, e.target.value)
+                  }
+                  min="1"
+                  max={sale.qty}
+                />
+              </td>
+              <td>{sale.totalSellingPrice}</td>
+              <td>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleRemoveRow(sale.id)}
+                >
+                  ❌
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </div>
   );
 };
 

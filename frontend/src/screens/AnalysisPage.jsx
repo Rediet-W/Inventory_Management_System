@@ -17,41 +17,41 @@ const AnalysisPage = () => {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(moment().month() + 1);
 
+  // Get start and end date for selected month
   const startDate = `${selectedYear}-${selectedMonth
     .toString()
     .padStart(2, "0")}-01`;
   const endDate = moment(startDate).endOf("month").format("YYYY-MM-DD");
 
+  // Fetch sales for the selected month
   const {
     data: monthlySalesData,
-    isLoading: isLoadingMonthly,
-    error: errorMonthly,
+    isLoading,
+    error,
   } = useGetSalesByDateRangeQuery({ startDate, endDate });
 
-  const monthlySalesQueries = Array.from({ length: 12 }, (_, i) => {
+  // Fetch sales for the entire year (separate queries for each month)
+  const yearlySalesData = [...Array(12)].map((_, i) => {
     const monthStart = `${selectedYear}-${(i + 1)
       .toString()
       .padStart(2, "0")}-01`;
     const monthEnd = moment(monthStart).endOf("month").format("YYYY-MM-DD");
 
-    return useGetSalesByDateRangeQuery({
-      startDate: monthStart,
-      endDate: monthEnd,
-    });
+    return (
+      useGetSalesByDateRangeQuery({ startDate: monthStart, endDate: monthEnd })
+        .data || []
+    );
   });
 
+  // Process Monthly Sales for Top Products
   const processedMonthlySales = useMemo(() => {
-    const salesList = Array.isArray(monthlySalesData)
-      ? monthlySalesData
-      : monthlySalesData?.data;
-
-    if (!salesList || salesList.length === 0) {
+    if (!monthlySalesData || !Array.isArray(monthlySalesData)) {
       return { topProducts: [] };
     }
 
-    const salesByProduct = salesList.reduce((acc, sale) => {
-      const productName = sale.product_name || "Unknown Product";
-      const quantity = parseInt(sale.quantity_sold, 10) || 0;
+    const salesByProduct = monthlySalesData.reduce((acc, sale) => {
+      const productName = sale.name || "Unknown Product";
+      const quantity = parseInt(sale.quantity, 10) || 0;
 
       if (!acc[productName]) {
         acc[productName] = { name: productName, total_sold: 0 };
@@ -68,29 +68,28 @@ const AnalysisPage = () => {
     return { topProducts };
   }, [monthlySalesData]);
 
+  // Process Yearly Sales Summary
   const processedYearlySales = useMemo(() => {
-    return monthlySalesQueries.map((query, index) => {
-      const salesList = Array.isArray(query.data)
-        ? query.data
-        : query.data?.data;
+    return yearlySalesData.map((salesList, index) => {
+      if (!Array.isArray(salesList)) {
+        return { month: moment().month(index).format("MMM"), total_sold: 0 };
+      }
 
-      const totalSold = salesList
-        ? salesList.reduce(
-            (sum, sale) => sum + (parseInt(sale.quantity_sold, 10) || 0),
-            0
-          )
-        : 0;
+      const totalSold = salesList.reduce(
+        (sum, sale) => sum + (parseInt(sale.quantity, 10) || 0),
+        0
+      );
 
       return {
         month: moment().month(index).format("MMM"),
         total_sold: totalSold,
       };
     });
-  }, [monthlySalesQueries]);
+  }, [yearlySalesData]);
 
   return (
     <Container className="mt-4">
-      <h2 className="text-center mb-4"> Shop Sales Analysis</h2>
+      <h2 className="text-center mb-4">Shop Sales Analysis</h2>
 
       <Row className="mb-4">
         <Col md={6}>
@@ -128,71 +127,61 @@ const AnalysisPage = () => {
         </Col>
       </Row>
 
-      {(isLoadingMonthly || monthlySalesQueries.some((q) => q.isLoading)) && (
+      {isLoading && (
         <div className="text-center">
           <Spinner animation="border" />
           <p>Loading sales data...</p>
         </div>
       )}
 
-      {errorMonthly && (
+      {error && (
         <Alert variant="danger" className="text-center">
-          Failed to load monthly sales data: {errorMonthly.message}
+          Failed to load sales data: {error.message}
         </Alert>
       )}
 
-      {monthlySalesQueries.some((q) => q.error) && (
-        <Alert variant="danger" className="text-center">
-          Failed to load yearly sales data.
-        </Alert>
+      {!isLoading && !error && processedMonthlySales.topProducts.length > 0 && (
+        <Row className="mt-4">
+          <Col md={6}>
+            <h5 className="text-center">
+              Top Sold Items (
+              {moment()
+                .month(selectedMonth - 1)
+                .format("MMMM")}
+              )
+            </h5>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={processedMonthlySales.topProducts}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="total_sold" fill="#007bff" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Col>
+        </Row>
       )}
-
-      {/* Top Sold Items (Monthly) */}
-      {!isLoadingMonthly &&
-        !errorMonthly &&
-        processedMonthlySales.topProducts.length > 0 && (
-          <Row className="mt-4">
-            <Col md={6}>
-              <h5 className="text-center">
-                📊 Top Sold Items (
-                {moment()
-                  .month(selectedMonth - 1)
-                  .format("MMMM")}
-                )
-              </h5>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={processedMonthlySales.topProducts}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="total_sold" fill="#007bff" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Col>
-          </Row>
-        )}
 
       {/* Yearly Sales Summary */}
-      {!monthlySalesQueries.some((q) => q.isLoading) &&
-        !monthlySalesQueries.some((q) => q.error) && (
-          <Row className="mt-4">
-            <Col>
-              <h5 className="text-center">
-                Yearly Sales Summary ({selectedYear})
-              </h5>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={processedYearlySales}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="total_sold" fill="#28a745" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Col>
-          </Row>
-        )}
+      {!isLoading && !error && (
+        <Row className="mt-4">
+          <Col>
+            <h5 className="text-center">
+              Yearly Sales Summary of ({selectedYear})
+            </h5>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={processedYearlySales}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="total_sold" fill="#28a745" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Col>
+        </Row>
+      )}
     </Container>
   );
 };

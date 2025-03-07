@@ -19,24 +19,19 @@ import {
 import SearchBar from "../components/SearchBar";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
-import { format } from "date-fns";
 import { triggerRefresh } from "../slices/refreshSlice";
-import moment from "moment";
+
 const ShopPage = () => {
   const dispatch = useDispatch();
   const refreshKey = useSelector((state) => state.refresh.refreshKey);
 
-  const today = moment().format("YYYY-MM-DD");
-  const lastWeek = moment().subtract(7, "days").format("YYYY-MM-DD");
-
   const { data, error, isLoading, refetch } = useGetShopProductsQuery({});
-
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
   const [updateProduct, { isLoading: isUpdating }] =
     useUpdateProductInShopMutation();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchType, setSearchType] = useState("product_name");
+  const [searchType, setSearchType] = useState("batchNumber"); // Default search type
   const [activeTab, setActiveTab] = useState("all");
   const { userInfo } = useSelector((state) => state.auth);
 
@@ -45,7 +40,7 @@ const ShopPage = () => {
   const [errorMessage, setErrorMessage] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
 
   useEffect(() => {
     refetch();
@@ -74,15 +69,15 @@ const ShopPage = () => {
   };
 
   const handleSave = async () => {
-    console.log(editingProduct);
     try {
       await updateProduct({
         id: editingProduct.id,
         updatedProduct: {
-          product_name: editingProduct.product_name,
-          batch_number: editingProduct.batch_number,
-          selling_price: parseFloat(editingProduct.selling_price),
+          name: editingProduct.name,
+          batchNumber: editingProduct.batchNumber,
+          sellingPrice: parseFloat(editingProduct.sellingPrice),
           quantity: parseFloat(editingProduct.quantity),
+          unitOfMeasurement: editingProduct.unitOfMeasurement,
         },
       }).unwrap();
 
@@ -95,49 +90,49 @@ const ShopPage = () => {
     }
   };
 
-  // Filter products based on search query
-  const filteredProducts = (products) => {
-    return products.filter((product) => {
-      const searchField =
-        searchType === "product_name"
-          ? product.product_name
-          : product.batch_number;
-      return searchField.toLowerCase().includes(searchQuery.toLowerCase());
+  // **Filter products based on search query**
+  let filteredProducts = data?.allProducts || [];
+
+  if (searchQuery.trim() !== "") {
+    filteredProducts = filteredProducts.filter((product) => {
+      if (searchType === "batchNumber") {
+        return product.batchNumber
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase());
+      } else {
+        return product.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      }
     });
-  };
+  }
 
-  // Sort products by date added (latest at top)
-  const allProducts =
-    data?.allProducts
-      ?.slice()
-      .sort((a, b) => new Date(b.date_added) - new Date(a.date_added)) || [];
-  const lowStockProducts =
-    data?.lowStockProducts
-      ?.slice()
-      .sort((a, b) => new Date(b.date_added) - new Date(a.date_added)) || [];
+  // **Low stock products based on `reorderLevel`**
+  const lowStockProducts = filteredProducts.filter(
+    (product) => product.quantity <= product.reorderLevel
+  );
 
-  // Pagination logic
+  // **Apply Tab Selection**
+  const displayedProducts =
+    activeTab === "all" ? filteredProducts : lowStockProducts;
+
+  // **Pagination logic**
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentProducts = filteredProducts(
-    activeTab === "all" ? allProducts : lowStockProducts
-  ).slice(indexOfFirstItem, indexOfLastItem);
-
-  const totalPages = Math.ceil(
-    filteredProducts(activeTab === "all" ? allProducts : lowStockProducts)
-      .length / itemsPerPage
+  const currentProducts = displayedProducts.slice(
+    indexOfFirstItem,
+    indexOfLastItem
   );
+  const totalPages = Math.ceil(displayedProducts.length / itemsPerPage);
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="container mt-4">
       {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+      <h3 className="text-center">የፍኖተ ጽድቅ ሰ/ት/ቤት የንዋየ ቅድሳት መሸጫ ሱቅ</h3>
+      <h4 className="text-center">ቀን፡ {new Date().toLocaleDateString()}</h4>
 
-      <Row className="align-items-center mb-4">
-        <Col md={6}>
-          <h2>Shop Products</h2>
-        </Col>
+      <Row className="align-items-center mt-4">
+        <Col md={6}></Col>
         <Col md={6} className="text-end">
           <SearchBar
             searchQuery={searchQuery}
@@ -182,11 +177,11 @@ const ShopPage = () => {
                 <Form.Label>Product Name</Form.Label>
                 <Form.Control
                   type="text"
-                  value={editingProduct.product_name}
+                  value={editingProduct.name}
                   onChange={(e) =>
                     setEditingProduct({
                       ...editingProduct,
-                      product_name: e.target.value,
+                      name: e.target.value,
                     })
                   }
                 />
@@ -195,11 +190,11 @@ const ShopPage = () => {
                 <Form.Label>Batch Number</Form.Label>
                 <Form.Control
                   type="text"
-                  value={editingProduct.batch_number}
+                  value={editingProduct.batchNumber}
                   onChange={(e) =>
                     setEditingProduct({
                       ...editingProduct,
-                      batch_number: e.target.value,
+                      batchNumber: e.target.value,
                     })
                   }
                 />
@@ -208,24 +203,11 @@ const ShopPage = () => {
                 <Form.Label>Selling Price</Form.Label>
                 <Form.Control
                   type="number"
-                  value={editingProduct.selling_price}
+                  value={editingProduct.sellingPrice}
                   onChange={(e) =>
                     setEditingProduct({
                       ...editingProduct,
-                      selling_price: e.target.value,
-                    })
-                  }
-                />
-              </Form.Group>
-              <Form.Group controlId="quantity">
-                <Form.Label>Quantity</Form.Label>
-                <Form.Control
-                  type="number"
-                  value={editingProduct.quantity}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      quantity: e.target.value,
+                      sellingPrice: e.target.value,
                     })
                   }
                 />
@@ -250,52 +232,31 @@ const ShopPage = () => {
   );
 };
 
-const renderTable = (products, handleDelete, userInfo, handleEdit) => {
-  if (!products || products.length === 0) {
-    return <Alert variant="warning">No products available</Alert>;
-  }
-
-  return (
-    <Table striped bordered hover className="mt-3">
-      <thead>
-        <tr>
-          <th>Date Added</th>
-          <th>Product Name</th>
-          <th>Batch Number</th>
-          <th>Selling Price per unit</th>
-          <th>Quantity Available</th>
-          {userInfo?.role === "admin" && <th>Actions</th>}
+const renderTable = (products, handleDelete, userInfo, handleEdit) => (
+  <Table striped bordered hover responsive className="mt-3">
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>Batch No.</th>
+        <th>Description</th>
+        <th>UOM</th>
+        <th>Quantity</th>
+        <th>Selling Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      {products.map((product, index) => (
+        <tr key={product.id}>
+          <td>{index + 1}</td>
+          <td>{product.batchNumber}</td>
+          <td>{product.name}</td>
+          <td>{product.unitOfMeasurement}</td>
+          <td>{product.quantity}</td>
+          <td>{product.sellingPrice}</td>
         </tr>
-      </thead>
-      <tbody>
-        {products.map((product) => (
-          <tr key={product.id}>
-            <td>{format(new Date(product.date_added), "dd/MM/yyyy")}</td>
-            <td>{product.product_name}</td>
-            <td>{product.batch_number}</td>
-            <td>{product.selling_price}</td>
-            <td>{product.quantity}</td>
-            {userInfo?.role === "admin" && (
-              <td>
-                <FaEdit
-                  style={{ cursor: "pointer", color: "green" }}
-                  onClick={() => handleEdit(product)}
-                />
-                <FaTrash
-                  style={{
-                    cursor: "pointer",
-                    color: "red",
-                    marginLeft: "10px",
-                  }}
-                  onClick={() => handleDelete(product.id)}
-                />
-              </td>
-            )}
-          </tr>
-        ))}
-      </tbody>
-    </Table>
-  );
-};
+      ))}
+    </tbody>
+  </Table>
+);
 
 export default ShopPage;

@@ -10,7 +10,7 @@ const RequestedProduct = sequelize.define(
       primaryKey: true,
       allowNull: false,
     },
-    product_name: {
+    name: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
@@ -23,11 +23,6 @@ const RequestedProduct = sequelize.define(
       defaultValue: 1,
       allowNull: false,
     },
-    date_requested: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-      allowNull: false,
-    },
     status: {
       type: DataTypes.ENUM("pending", "purchased", "fulfilled"),
       defaultValue: "pending",
@@ -36,8 +31,6 @@ const RequestedProduct = sequelize.define(
   },
   {
     timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
   }
 );
 

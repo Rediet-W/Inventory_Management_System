@@ -5,7 +5,6 @@ import { apiSlice } from "./slices/apiSlice";
 import { productApiSlice } from "./slices/productApiSlice";
 import { requestedProductApiSlice } from "./slices/requestedProductApiSlice";
 import { salesApiSlice } from "./slices/salesApiSlice";
-import { summaryApiSlice } from "./slices/summaryApiSlice";
 import { purchaseApiSlice } from "./slices/purchaseApiSlice";
 import { shopApi } from "./slices/shopApiSlice";
 
@@ -17,7 +16,6 @@ const store = configureStore({
     [productApiSlice.reducerPath]: productApiSlice.reducer,
     [requestedProductApiSlice.reducerPath]: requestedProductApiSlice.reducer,
     [salesApiSlice.reducerPath]: salesApiSlice.reducer,
-    [summaryApiSlice.reducerPath]: summaryApiSlice.reducer,
     [purchaseApiSlice.reducerPath]: purchaseApiSlice.reducer,
     [shopApi.reducerPath]: shopApi.reducer,
   },
@@ -27,7 +25,6 @@ const store = configureStore({
       productApiSlice.middleware,
       requestedProductApiSlice.middleware,
       salesApiSlice.middleware,
-      summaryApiSlice.middleware,
       purchaseApiSlice.middleware,
       shopApi.middleware
     ),

@@ -1,5 +1,4 @@
 import { apiSlice } from "./apiSlice";
-
 export const salesApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAllSales: builder.query({
@@ -23,6 +22,21 @@ export const salesApiSlice = apiSlice.injectEndpoints({
             response.message
           );
           throw new Error(response.message || "Error fetching sales");
+        }
+        return response.data;
+      },
+      providesTags: ["Sale"],
+    }),
+
+    getSalesByBatchNumber: builder.query({
+      query: (batchNumber) => `/api/sales/batch/${batchNumber}`,
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error(
+            `❌ Failed to fetch sales for batch number ${batchNumber}:`,
+            response.message
+          );
+          throw new Error(response.message || "Error fetching sales by batch");
         }
         return response.data;
       },
@@ -107,6 +121,7 @@ export const salesApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetSalesByDateQuery,
+  useGetSalesByBatchNumberQuery,
   useAddSaleMutation,
   useDeleteSaleMutation,
   useEditSaleMutation,

@@ -1,4 +1,5 @@
 import { apiSlice } from "./apiSlice";
+
 const PRODUCTS_URL = "/api/products";
 
 export const productApiSlice = apiSlice.injectEndpoints({
@@ -27,6 +28,43 @@ export const productApiSlice = apiSlice.injectEndpoints({
         if (!response.success) {
           console.error(`❌ Failed to fetch product ${id}:`, response.message);
           throw new Error(response.message || "Product not found");
+        }
+        return response.data;
+      },
+      providesTags: ["Product"],
+    }),
+
+    getProductByBatchNumber: builder.query({
+      query: (batchNumber) => ({
+        url: `${PRODUCTS_URL}/batch/${batchNumber}`,
+        method: "GET",
+      }),
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error(
+            `❌ Failed to fetch product by batch number ${batchNumber}:`,
+            response.message
+          );
+          throw new Error(response.message || "Product not found");
+        }
+        return response.data;
+      },
+      providesTags: ["Product"],
+    }),
+
+    getProductsByDate: builder.query({
+      query: ({ startDate, endDate }) => ({
+        url: `${PRODUCTS_URL}/byDate`,
+        method: "GET",
+        params: { startDate, endDate },
+      }),
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error(
+            "❌ Failed to fetch products by date:",
+            response.message
+          );
+          throw new Error(response.message || "Failed to fetch products");
         }
         return response.data;
       },
@@ -88,6 +126,8 @@ export const productApiSlice = apiSlice.injectEndpoints({
 export const {
   useGetProductsQuery,
   useGetProductByIdQuery,
+  useGetProductByBatchNumberQuery,
+  useGetProductsByDateQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,

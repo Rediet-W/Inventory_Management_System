@@ -22,7 +22,9 @@
   display: inline;
 }
 .sidebar-container .nav-item .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  /* background-color: rgba(255, 255, 255, 0.2);
+   */
+  background-color: #007bff;
 }
 
 .sidebar .nav-link {
@@ -77,7 +79,9 @@
 
 .sidebar-container {
   width: 250px;
-  background: linear-gradient(180deg, #007bff, #ffcc00);
+  /* background: linear-gradient(180deg, #007bff, #ffcc00);
+   */
+  background: #007bff;
   height: 100vh;
   position: sticky;
   top: 0;

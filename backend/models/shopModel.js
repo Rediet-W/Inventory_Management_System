@@ -10,15 +10,16 @@ const Shop = sequelize.define(
       primaryKey: true,
       allowNull: false,
     },
-    product_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    product_name: {
+    name: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    batch_number: {
+    batchNumber: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      unique: true,
+    },
+    unitOfMeasurement: {
       type: DataTypes.STRING(50),
       allowNull: false,
     },
@@ -26,28 +27,17 @@ const Shop = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    buying_price: {
+    sellingPrice: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    selling_price: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    user_name: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-    },
-    date_added: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-      allowNull: false,
+    reorderLevel: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
   },
   {
     timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
   }
 );
 

@@ -1,11 +1,10 @@
 import Shop from "../models/shopModel.js";
-import Product from "../models/productModel.js";
 import { Op } from "sequelize";
 
 export const getShopProducts = async (start, end) => {
   const whereClause = {};
   if (start && end) {
-    whereClause.date_added = {
+    whereClause.createdAt = {
       [Op.between]: [
         new Date(start).setHours(0, 0, 0, 0),
         new Date(end).setHours(23, 59, 59, 999),
@@ -15,32 +14,25 @@ export const getShopProducts = async (start, end) => {
   return await Shop.findAll({ where: whereClause });
 };
 
+export const getProductByBatchNumber = async (batchNumber) => {
+  return await Shop.findOne({ where: { batchNumber } });
+};
+
+export const getProductsByName = async (name) => {
+  return await Shop.findAll({
+    where: {
+      name: { [Op.like]: `%${name}%` },
+    },
+  });
+};
+
 export const addProductToShop = async (data) => {
-  const product = await Product.findByPk(data.productId);
-  if (!product) return { error: "Product not found in the store" };
-
-  if (product.quantity < data.quantity) {
-    return { error: "Not enough stock available" };
-  }
-
-  product.quantity -= data.quantity;
-  if (product.quantity === 0) {
-    await product.destroy();
-    return {
-      message: "Product added to shop and deleted from store as quantity is 0",
-    };
-  } else {
-    await product.save();
-  }
-
   return await Shop.create({
-    product_id: data.productId,
-    product_name: product.name,
-    batch_number: data.batchNumber,
+    name: data.name,
+    batchNumber: data.batchNumber,
+    unitOfMeasurement: data.unitOfMeasurement,
     quantity: data.quantity,
-    buying_price: product.buyingPrice,
-    selling_price: data.sellingPrice,
-    user_name: data.userName,
+    sellingPrice: data.sellingPrice,
   });
 };
 
@@ -48,11 +40,12 @@ export const updateProductInShop = async (id, data) => {
   const shopProduct = await Shop.findByPk(id);
   if (!shopProduct) return null;
 
-  shopProduct.product_name = data.product_name || shopProduct.product_name;
-  shopProduct.batch_number = data.batch_number || shopProduct.batch_number;
+  shopProduct.name = data.name || shopProduct.name;
+  shopProduct.batchNumber = data.batchNumber || shopProduct.batchNumber;
+  shopProduct.unitOfMeasurement =
+    data.unitOfMeasurement || shopProduct.unitOfMeasurement;
   shopProduct.quantity = data.quantity || shopProduct.quantity;
-  shopProduct.selling_price = data.selling_price || shopProduct.selling_price;
-  shopProduct.user_name = data.user_name || shopProduct.user_name;
+  shopProduct.sellingPrice = data.sellingPrice || shopProduct.sellingPrice;
 
   if (shopProduct.quantity === 0) {
     await shopProduct.destroy();

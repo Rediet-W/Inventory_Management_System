@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   FaHome,
@@ -16,18 +16,29 @@ import {
 const Sidebar = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const location = useLocation();
 
   if (!userInfo) {
     return null;
   }
+  const logoutHandler = async () => {
+    try {
+      await logoutApiCall().unwrap();
+      dispatch(logout());
+      navigate("/login");
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div
-      className={`sidebar-container ${isCollapsed ? "collapsed" : ""}`}
+      className={`sidebar-container min-h-screen max-h-fit ${
+        isCollapsed ? "collapsed" : ""
+      }`}
       style={{
         width: isCollapsed ? "80px" : "250px",
-        height: "100vh",
-        background: "linear-gradient(180deg, #007bff, #ffcc00)",
+        background: "#0076f5",
         position: "sticky",
         top: 0,
         left: 0,
@@ -43,7 +54,7 @@ const Sidebar = () => {
           position: "absolute",
           top: "10px",
           right: isCollapsed ? "-40px" : "-20px",
-          background: "#007bff",
+          background: "#60adff",
           color: "#fff",
           border: "none",
           borderRadius: "50%",
@@ -57,145 +68,108 @@ const Sidebar = () => {
 
       {/* Sidebar Links */}
       <ul className="nav flex-column" style={{ padding: "10px" }}>
-        {/* Dashboard */}
-        <li className="nav-item">
-          <Link
-            to="/"
-            className="nav-link text-light d-flex align-items-center"
-            style={{ padding: "10px" }}
-          >
-            <FaHome className="me-2" />
-            {!isCollapsed && <span>Dashboard</span>}
-          </Link>
-        </li>
-        <hr style={{ borderColor: "#fff" }} />
-
-        {/* SuperAdmin-specific links */}
-        {userInfo?.role === "superadmin" && (
-          <li className="nav-item">
-            <Link
-              to="/report"
-              className="nav-link text-light d-flex align-items-center"
-              style={{ padding: "10px" }}
-            >
-              <FaChartLine className="me-2" />
-              {!isCollapsed && <span>Report</span>}
-            </Link>
-          </li>
-        )}
-
-        {/* User and Admin Links */}
-        {userInfo?.role !== "superadmin" && (
-          <>
-            {/* Requested */}
-            <li className="nav-item">
+        {/* Function to determine active link */}
+        {[
+          { to: "/", label: "Dashboard", icon: <FaHome /> },
+          userInfo?.role === "superadmin" && {
+            to: "/report",
+            label: "Report",
+            icon: <FaChartLine />,
+          },
+          userInfo?.role !== "superadmin" && {
+            to: "/requested",
+            label: "Requested",
+            icon: <FaClipboardList />,
+          },
+          userInfo?.role !== "superadmin" && {
+            to: "/sales",
+            label: "Add Sales",
+            icon: <FaShoppingCart />,
+          },
+          userInfo?.role !== "superadmin" && {
+            to: "/shop",
+            label: "Shop Inventory",
+            icon: <FaStore />,
+          },
+          userInfo?.role !== "superadmin" && {
+            to: "/shopcard",
+            label: "Shop Card",
+            icon: <FaStore />,
+          },
+          userInfo?.role === "admin" && {
+            to: "/add-products",
+            label: "Add Products",
+            icon: <FaBoxOpen />,
+          },
+          userInfo?.role === "admin" && {
+            to: "/store",
+            label: "Inventory List",
+            icon: <FaStore />,
+          },
+          userInfo?.role === "admin" && {
+            to: "/transfer",
+            label: "Transfer to Shop",
+            icon: <FaStore />,
+          },
+          userInfo?.role === "admin" && {
+            to: "/stockcard",
+            label: "Stock Card",
+            icon: <FaStore />,
+          },
+          userInfo?.isPrimaryAdmin && {
+            to: "/employees",
+            label: "Employees",
+            icon: <FaUserFriends />,
+          },
+          userInfo?.isPrimaryAdmin && {
+            to: "/management",
+            label: "Management",
+            icon: <FaUserFriends />,
+          },
+          userInfo?.role === "admin" && {
+            to: "/summary",
+            label: "Summary",
+            icon: <FaClipboardList />,
+          },
+          // userInfo?.role === "admin" && {
+          //   to: "/report",
+          //   label: "Report",
+          //   icon: <FaChartLine />,
+          // },
+          userInfo?.role === "admin" && {
+            to: "/analysis",
+            label: "Analysis",
+            icon: <FaChartLine />,
+          },
+        ]
+          .filter(Boolean)
+          .map(({ to, label, icon }) => (
+            <li className="nav-item" key={to}>
               <Link
-                to="/requested"
-                className="nav-link text-light d-flex align-items-center"
-                style={{ padding: "10px" }}
+                to={to}
+                className={`nav-link d-flex align-items-center ${
+                  location.pathname === to
+                    ? "bg-white text-black"
+                    : "text-light"
+                }`}
+                style={{
+                  padding: "10px",
+                  transition: "background 0.3s",
+                  borderRadius: "4px",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#0056b3")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background =
+                    location.pathname === to ? "#0056b3" : "transparent")
+                }
               >
-                <FaClipboardList className="me-2" />
-                {!isCollapsed && <span>Requested</span>}
+                {icon}
+                {!isCollapsed && <span className="ms-2">{label}</span>}
               </Link>
             </li>
-
-            {/* Sales */}
-            <li className="nav-item">
-              <Link
-                to="/sales"
-                className="nav-link text-light d-flex align-items-center"
-                style={{ padding: "10px" }}
-              >
-                <FaShoppingCart className="me-2" />
-                {!isCollapsed && <span>Sales</span>}
-              </Link>
-            </li>
-
-            {/* Shop */}
-            <li className="nav-item">
-              <Link
-                to="/shop"
-                className="nav-link text-light d-flex align-items-center"
-                style={{ padding: "10px" }}
-              >
-                <FaStore className="me-2" />
-                {!isCollapsed && <span>Shop</span>}
-              </Link>
-            </li>
-
-            {/* Admin-specific Links */}
-            {userInfo?.role === "admin" && (
-              <>
-                <li className="nav-item">
-                  <Link
-                    to="/add-products"
-                    className="nav-link text-light d-flex align-items-center"
-                    style={{ padding: "10px" }}
-                  >
-                    <FaBoxOpen className="me-2" />
-                    {!isCollapsed && <span>Add Products</span>}
-                  </Link>
-                </li>
-
-                <li className="nav-item">
-                  <Link
-                    to="/store"
-                    className="nav-link text-light d-flex align-items-center"
-                    style={{ padding: "10px" }}
-                  >
-                    <FaStore className="me-2" />
-                    {!isCollapsed && <span>Store</span>}
-                  </Link>
-                </li>
-                {userInfo?.isPrimaryAdmin && (
-                  <li className="nav-item">
-                    <Link
-                      to="/employees"
-                      className="nav-link text-light d-flex align-items-center"
-                      style={{ padding: "10px" }}
-                    >
-                      <FaUserFriends className="me-2" />
-                      {!isCollapsed && <span>Employees</span>}
-                    </Link>
-                  </li>
-                )}
-
-                <li className="nav-item">
-                  <Link
-                    to="/summary"
-                    className="nav-link text-light d-flex align-items-center"
-                    style={{ padding: "10px" }}
-                  >
-                    <FaClipboardList className="me-2" />
-                    {!isCollapsed && <span>Summary</span>}
-                  </Link>
-                </li>
-
-                <li className="nav-item">
-                  <Link
-                    to="/report"
-                    className="nav-link text-light d-flex align-items-center"
-                    style={{ padding: "10px" }}
-                  >
-                    <FaChartLine className="me-2" />
-                    {!isCollapsed && <span>Report</span>}
-                  </Link>
-                </li>
-
-                <li className="nav-item">
-                  <Link
-                    to="/analysis"
-                    className="nav-link text-light d-flex align-items-center"
-                    style={{ padding: "10px" }}
-                  >
-                    <FaChartLine className="me-2" />
-                    {!isCollapsed && <span>Analysis</span>}
-                  </Link>
-                </li>
-              </>
-            )}
-          </>
-        )}
+          ))}
       </ul>
     </div>
   );

@@ -11,45 +11,40 @@ const Sale = sequelize.define(
       primaryKey: true,
       allowNull: false,
     },
-    product_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: Shop,
-        key: "id",
-      },
-      onDelete: "SET NULL",
-    },
-    product_name: {
+
+    name: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    batch_number: {
+    batchNumber: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
+    unitOfMeasurement: {
       type: DataTypes.STRING(50),
       allowNull: false,
     },
-    quantity_sold: {
+    quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    selling_price: {
+    unitSellingPrice: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    sale_date: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-      allowNull: false,
+    totalSellingPrice: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return this.quantity * this.unitSellingPrice;
+      },
     },
-    user_name: {
+    seller: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
   },
   {
     timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
   }
 );
 

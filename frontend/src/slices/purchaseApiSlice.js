@@ -1,12 +1,15 @@
 import { apiSlice } from "./apiSlice"; // Reuse the base configuration from apiSlice
 
-// Define the API slice for purchases
+const PURCHASES_URL = "/api/purchases";
+
 export const purchaseApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // Fetch purchases by date range
-    getPurchasesByDateRange: builder.query({
-      query: ({ startDate, endDate }) =>
-        `/api/purchases?startDate=${startDate}&endDate=${endDate}`,
+    getAllPurchases: builder.query({
+      query: ({ startDate, endDate } = {}) => ({
+        url: PURCHASES_URL,
+        method: "GET",
+        params: startDate && endDate ? { startDate, endDate } : {},
+      }),
       transformResponse: (response) => {
         if (!response.success) {
           console.error("❌ Failed to fetch purchases:", response.message);
@@ -17,9 +20,42 @@ export const purchaseApiSlice = apiSlice.injectEndpoints({
       providesTags: ["Purchase"],
     }),
 
+    getPurchaseById: builder.query({
+      query: (id) => ({
+        url: `${PURCHASES_URL}/${id}`,
+        method: "GET",
+      }),
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error(`❌ Failed to fetch purchase ${id}:`, response.message);
+          throw new Error(response.message || "Purchase not found");
+        }
+        return response.data;
+      },
+      providesTags: ["Purchase"],
+    }),
+
+    getPurchaseByBatchNumber: builder.query({
+      query: (batchNumber) => ({
+        url: `${PURCHASES_URL}/batch/${batchNumber}`,
+        method: "GET",
+      }),
+      transformResponse: (response) => {
+        if (!response.success) {
+          console.error(
+            `❌ Failed to fetch purchase by batch ${batchNumber}:`,
+            response.message
+          );
+          throw new Error(response.message || "Purchase not found");
+        }
+        return response.data;
+      },
+      providesTags: ["Purchase"],
+    }),
+
     createPurchase: builder.mutation({
       query: (newPurchase) => ({
-        url: "/api/purchases",
+        url: PURCHASES_URL,
         method: "POST",
         body: newPurchase,
       }),
@@ -36,9 +72,18 @@ export const purchaseApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ["Purchase"],
     }),
 
+    getPurchasesByDateRange: builder.query({
+      query: ({ startDate, endDate }) => ({
+        url: `${PURCHASES_URL}/bydate`,
+        method: "GET",
+        params: { startDate, endDate },
+      }),
+      providesTags: ["Purchase"],
+    }),
+
     deletePurchase: builder.mutation({
       query: (purchaseId) => ({
-        url: `/api/purchases/${purchaseId}`,
+        url: `${PURCHASES_URL}/${purchaseId}`,
         method: "DELETE",
       }),
       transformResponse: (response) => {
@@ -57,7 +102,10 @@ export const purchaseApiSlice = apiSlice.injectEndpoints({
 });
 
 export const {
-  useGetPurchasesByDateRangeQuery,
+  useGetAllPurchasesQuery,
+  useGetPurchaseByIdQuery,
+  useGetPurchaseByBatchNumberQuery,
   useCreatePurchaseMutation,
   useDeletePurchaseMutation,
+  useGetPurchasesByDateRangeQuery,
 } = purchaseApiSlice;

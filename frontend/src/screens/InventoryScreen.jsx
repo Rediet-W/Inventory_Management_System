@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from "react";
-import {
-  Table,
-  Button,
-  Nav,
-  Form,
-  Row,
-  Col,
-  Pagination,
-  Alert,
-} from "react-bootstrap";
+import { Table, Nav, Pagination, Alert, Row, Col } from "react-bootstrap";
 import {
   useGetProductsQuery,
   useDeleteProductMutation,
 } from "../slices/productApiSlice";
 import { useSelector, useDispatch } from "react-redux";
-import { useAddToShopMutation } from "../slices/shopApiSlice";
 import { triggerRefresh } from "../slices/refreshSlice";
 import SearchBar from "../components/SearchBar";
 
@@ -22,17 +12,13 @@ const InventoryPage = () => {
   const dispatch = useDispatch();
   const refreshKey = useSelector((state) => state.refresh.refreshKey);
   const { data: products, isLoading, error, refetch } = useGetProductsQuery();
-  const { userInfo } = useSelector((state) => state.auth);
-
-  const [addToShop, { isLoading: isAdding }] = useAddToShopMutation();
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchType, setSearchType] = useState("productName");
-  const [quantities, setQuantities] = useState({});
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [searchType, setSearchType] = useState("batchNumber");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
 
   useEffect(() => {
     refetch();
@@ -40,57 +26,6 @@ const InventoryPage = () => {
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <Alert variant="danger">Error loading products</Alert>;
-
-  const handleQuantityChange = (productId, value) => {
-    setQuantities({ ...quantities, [productId]: value });
-  };
-
-  const handleAddToShop = async (productId) => {
-    const quantityToAdd = quantities[productId];
-    const product = products.find((product) => product.id === productId);
-
-    // ✅ Check if required fields are present before making the request
-    if (!product?.name) {
-      setErrorMessage("Product name is required.");
-      return;
-    }
-    if (!product?.buyingPrice || isNaN(Number(product.buyingPrice))) {
-      setErrorMessage("Buying price must be a valid number.");
-      return;
-    }
-    if (!quantityToAdd || quantityToAdd <= 0) {
-      setErrorMessage("Please enter a valid quantity.");
-      return;
-    }
-    if (quantityToAdd > product.quantity) {
-      setErrorMessage(
-        `Cannot add more than available quantity. Available: ${product.quantity}`
-      );
-      return;
-    }
-
-    try {
-      await addToShop({
-        productId,
-        name: product.name,
-        batchNumber: product.batchNumber,
-        quantity: parseInt(quantityToAdd, 10),
-        buyingPrice: parseFloat(product.buyingPrice),
-        sellingPrice: parseFloat(product.sellingPrice),
-        userName: userInfo?.name,
-      }).unwrap();
-
-      alert(`✅ Added ${quantityToAdd} units of ${product.name} to shop`);
-      setQuantities((prev) => ({
-        ...prev,
-        [productId]: "", // Reset to empty string
-      }));
-      dispatch(triggerRefresh());
-    } catch (error) {
-      console.error("❌ Failed to add product to shop", error);
-      setErrorMessage(error.data?.message || "Failed to add product to shop");
-    }
-  };
 
   const handleDeleteProduct = async (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
@@ -100,44 +35,55 @@ const InventoryPage = () => {
         dispatch(triggerRefresh());
       } catch (error) {
         console.error("❌ Failed to delete product", error);
-        setErrorMessage(error.data?.message || "Failed to delete product");
       }
     }
   };
 
-  // Filter and sort products
-  const filteredProducts = products
-    ?.filter((product) => {
-      const matchesSearchQuery =
-        searchType === "productName"
-          ? product.name?.toLowerCase().includes(searchQuery.toLowerCase())
-          : product.batchNumber
-              ?.toLowerCase()
-              .includes(searchQuery.toLowerCase());
+  // **🔹 Reverted Search Logic (Filter Instead of API Call)**
+  let filteredProducts = products || [];
 
-      const matchesLowStock =
-        filter === "lowStock" ? product.quantity < 3 : true;
-      return matchesSearchQuery && matchesLowStock;
-    })
-    .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+  // **Filter by Low Stock**
+  if (filter === "lowStock") {
+    filteredProducts = filteredProducts.filter(
+      (product) => product.quantity <= product.reorderLevel
+    );
+  }
 
-  // Pagination logic
+  // **Search Filter**
+  if (searchQuery.trim() !== "") {
+    filteredProducts = filteredProducts.filter((product) => {
+      if (searchType === "batchNumber") {
+        return product.batchNumber
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+      } else {
+        return product.name.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+    });
+  }
+
+  // **Sort (Avoid Immutable Sort Error)**
+  const sortedProducts = [...filteredProducts].sort(
+    (a, b) => new Date(b.dateAdded) - new Date(a.dateAdded)
+  );
+
+  // **Pagination**
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentProducts = filteredProducts?.slice(
+  const currentProducts = sortedProducts.slice(
     indexOfFirstItem,
     indexOfLastItem
   );
-  const totalPages = Math.ceil((filteredProducts?.length || 0) / itemsPerPage);
+  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="container mt-5">
-      <h2>{filter === "all" ? "All Products" : "Low Stock Products"}</h2>
+      <h3 className="text-center">የፍኖተ ጽድቅ ሰ/ት/ቤት የንዋየ ቅድሳት መሸጫ ሱቅ</h3>
+      <h4 className="text-center">ቀን፡ {new Date().toLocaleDateString()}</h4>
 
-      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-
+      {/* Filter & Search */}
       <Row className="align-items-center mb-4">
         <Col md={8}>
           <Nav variant="tabs">
@@ -169,65 +115,35 @@ const InventoryPage = () => {
         </Col>
       </Row>
 
-      <Table striped bordered hover responsive className="table-sm">
+      {/* Product Table */}
+      <Table striped bordered hover responsive className="table-sm mt-3">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Batch Number</th>
-            <th>Quantity</th>
-            <th>Selling Price</th>
-            {userInfo?.role === "admin" && <th>Buying Price</th>}
-            {userInfo?.role === "admin" && <th>Select Quantity</th>}
-            {userInfo?.role === "admin" && <th>Actions</th>}
+            <th>No.</th>
+            <th>Batch No.</th>
+            <th>Description</th>
+            <th>UOM</th>
+            <th>Qty</th>
+            <th>Average Cost</th>
+            <th>Total Cost</th>
           </tr>
         </thead>
         <tbody>
-          {currentProducts?.map((product) => (
+          {currentProducts.map((product, index) => (
             <tr key={product.id}>
-              <td>{product.name}</td>
+              <td>{indexOfFirstItem + index + 1}</td>
               <td>{product.batchNumber}</td>
+              <td>{product.name}</td>
+              <td>{product.unitOfMeasurement}</td>
               <td>{product.quantity}</td>
-              <td>{product.sellingPrice}</td>
-              {userInfo?.role === "admin" && <td>{product.buyingPrice}</td>}
-              {userInfo?.role === "admin" && (
-                <>
-                  <td>
-                    <Form.Control
-                      type="number"
-                      value={quantities[product.id] || ""}
-                      onChange={(e) =>
-                        handleQuantityChange(product.id, e.target.value)
-                      }
-                      placeholder="Quantity"
-                      min="1"
-                    />
-                  </td>
-                  <td>
-                    <Button
-                      variant="primary"
-                      className="btn-sm"
-                      onClick={() => handleAddToShop(product.id)}
-                      disabled={isAdding}
-                    >
-                      {isAdding ? "Adding..." : "Add to Shop"}
-                    </Button>
-                    <Button
-                      variant="danger"
-                      className="btn-sm ml-2"
-                      onClick={() => handleDeleteProduct(product.id)}
-                      disabled={isDeleting}
-                    >
-                      {isDeleting ? "Deleting..." : "Delete"}
-                    </Button>
-                  </td>
-                </>
-              )}
+              <td>{product.averageCost}</td>
+              <td>{product.totalCost}</td>
             </tr>
           ))}
         </tbody>
       </Table>
 
-      {/* Pagination controls */}
+      {/* Pagination */}
       <Pagination className="justify-content-center mt-4">
         {[...Array(totalPages).keys()].map((number) => (
           <Pagination.Item

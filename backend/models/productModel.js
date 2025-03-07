@@ -18,7 +18,11 @@ const Product = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    buyingPrice: {
+    totalCost: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+    },
+    averageCost: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
@@ -28,17 +32,24 @@ const Product = sequelize.define(
     },
     batchNumber: {
       type: DataTypes.STRING(50),
+      allowNull: false,
+      unique: true,
+    },
+    unitOfMeasurement: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+    },
+    remark: {
+      type: DataTypes.TEXT,
       allowNull: true,
     },
-    date: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
+    reorderLevel: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
   },
   {
     timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
   }
 );
 
