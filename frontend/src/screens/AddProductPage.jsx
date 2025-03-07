@@ -8,11 +8,13 @@ import {
   Card,
   Row,
   Col,
+  Modal,
 } from "react-bootstrap";
 import { useCreatePurchaseMutation } from "../slices/purchaseApiSlice";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { jsPDF } from "jspdf";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import PurchasePDF from "../pdfs/PurchasePDF";
 
 const AddProductPage = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -27,7 +29,9 @@ const AddProductPage = () => {
       reference: "",
     },
   ]);
+  const [completedPurchases, setCompletedPurchases] = useState([]); // Store completed purchases
   const [errorMessage, setErrorMessage] = useState("");
+  const [showDownloadModal, setShowDownloadModal] = useState(false); // Modal state
   const [createPurchase, { isLoading }] = useCreatePurchaseMutation();
 
   const handleChange = (index, field, value) => {
@@ -71,39 +75,18 @@ const AddProductPage = () => {
         quantity: parseFloat(product.quantity),
         purchaser: userInfo.name, // Automatically set purchaser
       }));
-      console.log(purchaseData, "purchaseData");
+
       for (const product of purchaseData) {
         await createPurchase(product).unwrap();
-        console.log(product, "each");
       }
-      navigate("/");
+
+      setCompletedPurchases(products); // Save completed purchases for PDF
+      setProducts([]); // Clear the form
+      setShowDownloadModal(true); // Show the download modal
     } catch (error) {
       console.error("❌ Error adding purchases:", error);
       setErrorMessage(error?.message || "Failed to add purchases. Try again.");
     }
-  };
-
-  const downloadPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Date: " + new Date().toLocaleDateString(), 10, 10);
-    doc.text("I have received the above-listed items:", 10, 20);
-    let y = 30;
-
-    products.forEach((product, index) => {
-      doc.text(
-        `${index + 1}. ${product.name} - ${product.quantity} ${
-          product.unitOfMeasurement
-        } (Batch: ${product.batchNumber})`,
-        10,
-        y
-      );
-      y += 10;
-    });
-
-    doc.text("\n\nSignature: ______________________", 10, y + 20);
-    doc.text("Name: ___________________________", 10, y + 30);
-    doc.text("Date: ___________________________", 10, y + 40);
-    doc.save("purchase_receipt.pdf");
   };
 
   return (
@@ -195,7 +178,6 @@ const AddProductPage = () => {
                             required
                           />
                         </td>
-
                         <td>
                           {products.length > 1 && (
                             <Button
@@ -216,18 +198,51 @@ const AddProductPage = () => {
                 <Button variant="primary" type="submit" disabled={isLoading}>
                   {isLoading ? "Adding..." : "Submit Purchases"}
                 </Button>
-                <Button
-                  variant="success"
-                  className="ms-2"
-                  onClick={downloadPDF}
-                >
-                  Download Receipt
-                </Button>
               </Form>
             </Card.Body>
           </Card>
         </Col>
       </Row>
+
+      {/* Download Confirmation Modal */}
+      <Modal
+        show={showDownloadModal}
+        onHide={() => setShowDownloadModal(false)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Download Purchase Receipt</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Do you want to download the purchase receipt as a PDF?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowDownloadModal(false)}
+          >
+            No, Thanks
+          </Button>
+          <PDFDownloadLink
+            document={
+              <PurchasePDF
+                purchases={completedPurchases}
+                date={new Date().toLocaleDateString()}
+              />
+            }
+            fileName="Purchase_Receipt.pdf"
+          >
+            {({ loading }) => (
+              <Button
+                variant="primary"
+                disabled={loading}
+                onClick={() => setShowDownloadModal(false)}
+              >
+                {loading ? "Generating PDF..." : "Yes, Download"}
+              </Button>
+            )}
+          </PDFDownloadLink>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

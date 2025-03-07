@@ -13,9 +13,9 @@ import {
   Table,
 } from "react-bootstrap";
 import { FaDownload } from "react-icons/fa";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import logo from "../assets/logo.png";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import SalesPDF from "./SalesPdf";
+import PurchasesPDF from "./PurchasePdf";
 
 const SummaryPage = () => {
   const [startDate, setStartDate] = useState("");
@@ -24,7 +24,6 @@ const SummaryPage = () => {
   const [applyFilters, setApplyFilters] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Fetch sales & purchases within the date range
   const { data: sales } = useGetSalesByDateRangeQuery(
     applyFilters && startDate && endDate ? { startDate, endDate } : {},
     { skip: !applyFilters }
@@ -34,9 +33,7 @@ const SummaryPage = () => {
     applyFilters && startDate && endDate ? { startDate, endDate } : {},
     { skip: !applyFilters }
   );
-  console.log("purchases", purchases);
-  console.log("sales", sales);
-  // Calculate total sales amount
+
   const totalSales = useMemo(() => {
     return (
       sales?.reduce(
@@ -46,7 +43,6 @@ const SummaryPage = () => {
     );
   }, [sales]);
 
-  // Calculate total purchase amount
   const totalPurchases = useMemo(() => {
     return (
       purchases?.data?.reduce(
@@ -65,43 +61,6 @@ const SummaryPage = () => {
       setErrorMessage("");
       setApplyFilters(true);
     }
-  };
-
-  const exportPDF = async (sectionId, title) => {
-    const input = document.getElementById(sectionId);
-    if (!input) {
-      console.error(`Element with id ${sectionId} not found`);
-      return;
-    }
-
-    const currentDate = new Date().toLocaleDateString("en-GB");
-    const formattedStartDate = startDate
-      ? new Date(startDate).toLocaleDateString("en-GB")
-      : "N/A";
-    const formattedEndDate = endDate
-      ? new Date(endDate).toLocaleDateString("en-GB")
-      : "N/A";
-
-    const canvas = await html2canvas(input);
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const imgWidth = 190;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    // Add header
-    pdf.addImage(logo, "PNG", 10, 10, 30, 30); // Adjust size and position as needed
-    pdf.setFontSize(14);
-    pdf.setFont("helvetica", "bold");
-    pdf.text(title, 55, 20);
-    pdf.setFontSize(12);
-    pdf.text(`Generated On: ${currentDate}`, 55, 30);
-    pdf.text(`Period: ${formattedStartDate} to ${formattedEndDate}`, 55, 40);
-
-    // Add content
-    pdf.addImage(imgData, "PNG", 10, 50, imgWidth, imgHeight);
-
-    // Save the PDF
-    pdf.save(`${title}.pdf`);
   };
 
   return (
@@ -162,87 +121,107 @@ const SummaryPage = () => {
           {/* Sales Summary */}
           <Tab.Pane eventKey="sell">
             <div className="d-flex justify-content-end mb-3">
-              <button
-                onClick={() => exportPDF("sales-section", "Sales Report")}
-                className="btn btn-success"
+              <PDFDownloadLink
+                document={
+                  <SalesPDF
+                    sales={sales}
+                    totalSales={totalSales}
+                    header="የፍኖተ ጽድቅ ሰ/ት/ቤት የንዋየ ቅድሳት መሸጫ ሱቅ"
+                    dateRange={`From ${startDate} to ${endDate}`}
+                  />
+                }
+                fileName="sales_report.pdf"
               >
-                <FaDownload /> Export as PDF
-              </button>
+                {({ loading }) => (
+                  <button className="btn btn-success" disabled={loading}>
+                    <FaDownload />{" "}
+                    {loading ? "Generating PDF..." : "Export as PDF"}
+                  </button>
+                )}
+              </PDFDownloadLink>
             </div>
-            <div id="sales-section">
-              <Table striped bordered hover responsive className="mt-3">
-                <thead className="">
-                  <tr>
-                    <th>Date</th>
-                    <th>Name</th>
-                    <th>Quantity</th>
-                    <th>Unit Selling Price</th>
-                    <th>Total Selling Price</th>
+
+            {/* Render Sales Table */}
+            <Table striped bordered hover responsive className="mt-3">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Name</th>
+                  <th>Quantity</th>
+                  <th>Unit Selling Price</th>
+                  <th>Total Selling Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sales?.map((sale, index) => (
+                  <tr key={index}>
+                    <td>{sale?.createdAt?.split("T")[0] || "Unknown Date"}</td>
+                    <td>{sale.name || "Unknown Product"}</td>
+                    <td>{sale.quantity}</td>
+                    <td>{sale.unitSellingPrice} ETB</td>
+                    <td>{sale.quantity * sale.unitSellingPrice} ETB</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {sales?.map((sale, index) => (
-                    <tr key={index}>
-                      <td>
-                        {sale?.createdAt?.split("T")[0] || "Unknown Date"}
-                      </td>
-                      <td>{sale.name || "Unknown Product"}</td>
-                      <td>{sale.quantity}</td>
-                      <td>{sale.unitSellingPrice} ETB</td>
-                      <td>{sale.quantity * sale.unitSellingPrice} ETB</td>
-                    </tr>
-                  ))}
-                  <tr className="fw-bold">
-                    <td colSpan="4">Total</td>
-                    <td>{totalSales} ETB</td>
-                  </tr>
-                </tbody>
-              </Table>
-            </div>
+                ))}
+                <tr className="fw-bold">
+                  <td colSpan="4">Total</td>
+                  <td>{totalSales} ETB</td>
+                </tr>
+              </tbody>
+            </Table>
           </Tab.Pane>
 
           {/* Purchases Summary */}
           <Tab.Pane eventKey="purchase">
             <div className="d-flex justify-content-end mb-3">
-              <button
-                onClick={() =>
-                  exportPDF("purchases-section", "Purchase Report")
+              <PDFDownloadLink
+                document={
+                  <PurchasesPDF
+                    purchases={purchases?.data}
+                    totalPurchases={totalPurchases}
+                    header="የፍኖተ ጽድቅ ሰ/ት/ቤት የንዋየ ቅድሳት መሸጫ ሱቅ"
+                    dateRange={` ${startDate} - ${endDate}`}
+                  />
                 }
-                className="btn btn-success"
+                fileName="purchases_report.pdf"
               >
-                <FaDownload /> Export as PDF
-              </button>
+                {({ loading }) => (
+                  <button className="btn btn-success" disabled={loading}>
+                    <FaDownload />{" "}
+                    {loading ? "Generating PDF..." : "Export as PDF"}
+                  </button>
+                )}
+              </PDFDownloadLink>
             </div>
-            <div id="purchases-section">
-              <Table striped bordered hover responsive className="mt-3">
-                <thead className="">
-                  <tr>
-                    <th>Date</th>
-                    <th>Name</th>
-                    <th>Quantity</th>
-                    <th>Unit Cost</th>
-                    <th>Total Cost</th>
+
+            {/* Render Purchases Table */}
+            <Table striped bordered hover responsive className="mt-3">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Name</th>
+                  <th>Quantity</th>
+                  <th>Unit Cost</th>
+                  <th>Total Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {purchases?.data?.map((purchase, index) => (
+                  <tr key={index}>
+                    <td>
+                      {purchase?.createdAt?.split("T")[0] || "Unknown Date"}
+                    </td>
+                    <td>{purchase.name || "Unknown Product"}</td>
+                    <td>{purchase.quantity}</td>
+                    <td>{purchase.unitCost} ETB</td>
+                    <td>{purchase.quantity * purchase.unitCost} ETB</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {purchases?.data?.map((purchase, index) => (
-                    <tr key={index}>
-                      <td>
-                        {purchase?.createdAt?.split("T")[0] || "Unknown Date"}
-                      </td>
-                      <td>{purchase.name || "Unknown Product"}</td>
-                      <td>{purchase.quantity}</td>
-                      <td>{purchase.unitCost} ETB</td>
-                      <td>{purchase.quantity * purchase.unitCost} ETB</td>
-                    </tr>
-                  ))}
-                  <tr className="fw-bold">
-                    <td colSpan="4">Total</td>
-                    <td>{totalPurchases} ETB</td>
-                  </tr>
-                </tbody>
-              </Table>
-            </div>
+                ))}
+                <tr className="fw-bold">
+                  <td colSpan="4">Total</td>
+                  <td>{totalPurchases} ETB</td>
+                </tr>
+              </tbody>
+            </Table>
           </Tab.Pane>
         </Tab.Content>
       </Tab.Container>

@@ -6,6 +6,7 @@ import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
 import Layout from "./screens/layout";
 import logo from "/logo.png";
+import "./utils/fonts.js";
 
 const App = () => {
   return (

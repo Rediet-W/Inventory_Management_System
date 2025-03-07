@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { Table, Button, Row, Col, Form, Alert } from "react-bootstrap";
+import { Table, Button, Row, Col, Form, Alert, Modal } from "react-bootstrap";
 import { useGetProductsQuery } from "../slices/productApiSlice";
 import { useCreateTransferMutation } from "../slices/transferApiSlice";
 import { triggerRefresh } from "../slices/refreshSlice";
 import { useSelector, useDispatch } from "react-redux";
-import { saveAs } from "file-saver";
-import * as XLSX from "xlsx";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import TransferPDF from "../pdfs/TransferPdf";
 
 const TransferPage = () => {
   const dispatch = useDispatch();
   const { data: products, isLoading, error } = useGetProductsQuery();
   const [createTransfer, { isLoading: isSubmitting }] =
     useCreateTransferMutation();
-  const [transfers, setTransfers] = useState([]);
+  const [transfers, setTransfers] = useState([]); // Active transfers
+  const [completedTransfers, setCompletedTransfers] = useState([]); // Completed transfers for PDF
   const [errorMessage, setErrorMessage] = useState(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false); // Modal state
   const [signature] = useState("Storekeeper Name"); // Signature added only in download
   const [date] = useState(new Date().toISOString().split("T")[0]);
   const { userInfo } = useSelector((state) => state.auth);
@@ -123,38 +125,13 @@ const TransferPage = () => {
 
       alert("✅ Transfers completed successfully!");
       dispatch(triggerRefresh());
-      setTransfers([]);
+      setCompletedTransfers(transfers); // Save the completed transfers for PDF
+      setTransfers([]); // Clear the active transfers
       setErrorMessage(null);
+      setShowDownloadModal(true); // Show the download modal
     } catch (error) {
       setErrorMessage("❌ Failed to complete transfers.");
     }
-  };
-
-  const handleDownload = () => {
-    const exportData = transfers.map((t) => ({
-      "No.": transfers.indexOf(t) + 1,
-      Product: t.product,
-      "Batch No.": t.batchNumber,
-      UOM: t.unitOfMeasurement,
-      "Selling Price": t.sellingPrice,
-      "Qty in Store": t.qty,
-      "Qty to Transfer": t.quantityToTransfer,
-      "Reorder Level": t.reorderLevel, // Editable value
-      Signature: signature, // Add signature in download
-      Date: date, // Add date in download
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Transfers");
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const data = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
-    });
-    saveAs(data, "Transfers.xlsx");
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -180,9 +157,6 @@ const TransferPage = () => {
             disabled={isSubmitting}
           >
             {isSubmitting ? "Processing..." : "Transfer"}
-          </Button>
-          <Button variant="info" className="ms-2" onClick={handleDownload}>
-            Download
           </Button>
         </Col>
       </Row>
@@ -258,6 +232,43 @@ const TransferPage = () => {
           ))}
         </tbody>
       </Table>
+
+      {/* Download Confirmation Modal */}
+      <Modal
+        show={showDownloadModal}
+        onHide={() => setShowDownloadModal(false)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Download Transfer Report</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Do you want to download the transfer report as a PDF?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowDownloadModal(false)}
+          >
+            No, Thanks
+          </Button>
+          <PDFDownloadLink
+            document={
+              <TransferPDF transfers={completedTransfers} date={date} />
+            }
+            fileName="Transfers.pdf"
+          >
+            {({ loading }) => (
+              <Button
+                variant="primary"
+                disabled={loading}
+                onClick={() => setShowDownloadModal(false)}
+              >
+                {loading ? "Generating PDF..." : "Yes, Download"}
+              </Button>
+            )}
+          </PDFDownloadLink>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
