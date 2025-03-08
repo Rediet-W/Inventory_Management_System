@@ -39,7 +39,7 @@ const RegisterScreen = () => {
         name,
         email,
         password,
-        role: "user",
+        role: "superadmin",
       }).unwrap();
       console.log("✅ Register Response:", res);
 

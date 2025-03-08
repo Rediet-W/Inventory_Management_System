@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const SalesPDF = ({ sales, totalSales, header, dateRange }) => (
+const SalesPDF = ({ sales, totalSales, header, dateRange, totalCost }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       {/* Custom Header */}
@@ -64,10 +64,16 @@ const SalesPDF = ({ sales, totalSales, header, dateRange }) => (
             <Text style={styles.tableCell}>Quantity</Text>
           </View>
           <View style={styles.tableCol}>
-            <Text style={styles.tableCell}>Unit Selling Price</Text>
+            <Text style={styles.tableCell}>Unit Selling Price(ETB)</Text>
           </View>
           <View style={styles.tableCol}>
-            <Text style={styles.tableCell}>Total Selling Price</Text>
+            <Text style={styles.tableCell}>Total Selling Price(ETB)</Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}>Average Cost(ETB)</Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}>Total Cost(ETB)</Text>
           </View>
         </View>
 
@@ -88,11 +94,19 @@ const SalesPDF = ({ sales, totalSales, header, dateRange }) => (
               <Text style={styles.tableCell}>{sale.quantity}</Text>
             </View>
             <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{sale.unitSellingPrice} ETB</Text>
+              <Text style={styles.tableCell}>{sale.unitSellingPrice} </Text>
             </View>
             <View style={styles.tableCol}>
               <Text style={styles.tableCell}>
-                {sale.quantity * sale.unitSellingPrice} ETB
+                {sale.quantity * sale.unitSellingPrice}
+              </Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{sale.averageCost} </Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>
+                {sale.averageCost * sale.quantity}
               </Text>
             </View>
           </View>
@@ -101,19 +115,25 @@ const SalesPDF = ({ sales, totalSales, header, dateRange }) => (
         {/* Total Row */}
         <View style={styles.tableRow}>
           <View style={styles.tableCol}>
-            <Text style={styles.tableCell}></Text>
-          </View>
-          <View style={styles.tableCol}>
-            <Text style={styles.tableCell}></Text>
-          </View>
-          <View style={styles.tableCol}>
-            <Text style={styles.tableCell}></Text>
-          </View>
-          <View style={styles.tableCol}>
             <Text style={styles.tableCell}>Total</Text>
           </View>
           <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
+          </View>
+          <View style={styles.tableCol}>
             <Text style={styles.tableCell}>{totalSales} ETB</Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}>{totalCost}ETB</Text>
           </View>
         </View>
       </View>

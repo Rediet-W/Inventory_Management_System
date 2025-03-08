@@ -33,7 +33,13 @@ const HomeTop = () => {
   ).length;
 
   // Count items in shop (length of shop products)
-  const totalItemsInShop = allProducts.length;
+  const totalItemsInShop = allProducts.filter(
+    (product) => product.quantity > 0
+  ).length;
+
+  const zeroItemsInShop = allProducts.filter(
+    (product) => product.quantity == 0
+  ).length;
 
   const cardData = [
     {
@@ -44,19 +50,24 @@ const HomeTop = () => {
     {
       icon: <FaExclamationTriangle size={30} />,
       number: lowStockProductsCount,
-      title: "Low Stock Products",
+      title: "Low Stock Products(store)",
     },
     {
       icon: <FaStore size={30} />,
       number: totalItemsInShop,
       title: "Items in Shop",
     },
+    {
+      icon: <FaStore size={30} />,
+      number: zeroItemsInShop,
+      title: "zero quantity items in Shop",
+    },
   ];
 
   return (
     <Row className="g-4">
       {cardData.map((item, index) => (
-        <Col xs={12} md={4} key={index} className="rounded-full ">
+        <Col xs={12} md={3} key={index} className="rounded-full ">
           <Card
             className="text-center shadow-sm rounded-full "
             style={{ backgroundColor: "white", color: "#007bff" }}
@@ -64,7 +75,7 @@ const HomeTop = () => {
             <Card.Body>
               <div className="mb-2">{item.icon}</div>
               <Card.Text className="h3 fw-bold">{item.number}</Card.Text>
-              <Card.Title>{item.title}</Card.Title>
+              <Card.Title className="text-wrap">{item.title}</Card.Title>
             </Card.Body>
           </Card>
         </Col>

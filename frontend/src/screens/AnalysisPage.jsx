@@ -88,7 +88,7 @@ const AnalysisPage = () => {
   }, [yearlySalesData]);
 
   return (
-    <Container className="mt-4">
+    <Container className="mt-3">
       <h2 className="text-center mb-4">Shop Sales Analysis</h2>
 
       <Row className="mb-4">

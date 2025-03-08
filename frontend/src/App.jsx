@@ -4,34 +4,24 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Header from "./components/Header";
 import Sidebar from "./components/SideBar";
-import Layout from "./screens/layout";
-import logo from "/logo.png";
 import "./utils/fonts.js";
 
 const App = () => {
   return (
     <>
-      {/* TOP LOGO + HEADER */}
+      {/* Header Section */}
       <div
         className="d-flex align-items-center"
         style={{
           position: "relative",
           width: "100%",
           background: "#0076f5",
-          // padding: "10px 20px",
           height: "80px",
         }}
       >
-        {/* LOGO */}
-        <img
-          src={logo}
-          style={{
-            width: "80px",
-            height: "80px",
-            objectFit: "contain",
-            marginRight: "10px",
-          }}
-        />
+        <h3 className="mx-4 text-white text-center">
+          የፍኖተ ጽድቅ ሰ/ት/ቤት የንዋየ ቅድሳት መሸጫ ሱቅ
+        </h3>
 
         {/* HEADER */}
         <div style={{ flex: 1 }}>
@@ -39,13 +29,24 @@ const App = () => {
         </div>
       </div>
 
+      {/* Toast Container */}
       <ToastContainer />
 
       {/* SIDEBAR + MAIN CONTENT */}
-      <div className="d-flex">
+      <div className="d-flex" style={{ minHeight: "calc(100vh - 80px)" }}>
         <Sidebar />
 
-        <Container className="my-2" style={{ flex: 1 }}>
+        {/* Main Content */}
+        <Container
+          className="my-2"
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start", // Align content to the top-left
+            justifyContent: "flex-start", // Align content to the top-left
+          }}
+        >
           <Outlet />
         </Container>
       </div>

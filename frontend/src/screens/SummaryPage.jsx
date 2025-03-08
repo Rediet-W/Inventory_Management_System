@@ -43,6 +43,15 @@ const SummaryPage = () => {
     );
   }, [sales]);
 
+  const totalCost = useMemo(() => {
+    return (
+      sales?.reduce(
+        (total, sale) => total + sale.averageCost * sale.quantity,
+        0
+      ) || 0
+    );
+  }, [sales]);
+
   const totalPurchases = useMemo(() => {
     return (
       purchases?.data?.reduce(
@@ -128,6 +137,7 @@ const SummaryPage = () => {
                     totalSales={totalSales}
                     header="የፍኖተ ጽድቅ ሰ/ት/ቤት የንዋየ ቅድሳት መሸጫ ሱቅ"
                     dateRange={`From ${startDate} to ${endDate}`}
+                    totalCost={totalCost}
                   />
                 }
                 fileName="sales_report.pdf"
@@ -150,6 +160,8 @@ const SummaryPage = () => {
                   <th>Quantity</th>
                   <th>Unit Selling Price</th>
                   <th>Total Selling Price</th>
+                  <th>Average Cost</th>
+                  <th>Total Cost</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,13 +170,16 @@ const SummaryPage = () => {
                     <td>{sale?.createdAt?.split("T")[0] || "Unknown Date"}</td>
                     <td>{sale.name || "Unknown Product"}</td>
                     <td>{sale.quantity}</td>
-                    <td>{sale.unitSellingPrice} ETB</td>
-                    <td>{sale.quantity * sale.unitSellingPrice} ETB</td>
+                    <td>{sale.unitSellingPrice} </td>
+                    <td>{sale.quantity * sale.unitSellingPrice} </td>
+                    <td>{sale.averageCost} </td>
+                    <td>{sale.quantity * sale.averageCost} </td>
                   </tr>
                 ))}
                 <tr className="fw-bold">
-                  <td colSpan="4">Total</td>
-                  <td>{totalSales} ETB</td>
+                  <td colSpan="4">Total </td>
+                  <td colSpan="2">{totalSales} ETB</td>
+                  <td colSpan="1">{totalCost} ETB</td>
                 </tr>
               </tbody>
             </Table>
@@ -212,8 +227,8 @@ const SummaryPage = () => {
                     </td>
                     <td>{purchase.name || "Unknown Product"}</td>
                     <td>{purchase.quantity}</td>
-                    <td>{purchase.unitCost} ETB</td>
-                    <td>{purchase.quantity * purchase.unitCost} ETB</td>
+                    <td>{purchase.unitCost} </td>
+                    <td>{purchase.quantity * purchase.unitCost} </td>
                   </tr>
                 ))}
                 <tr className="fw-bold">

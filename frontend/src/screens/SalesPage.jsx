@@ -177,9 +177,6 @@ const SalesPage = () => {
           >
             {isSubmitting ? "Processing..." : "Submit Sales"}
           </Button>
-          <Button variant="info" className="ms-2" onClick={handleDownload}>
-            Download
-          </Button>
         </Col>
       </Row>
 
@@ -233,7 +230,7 @@ const SalesPage = () => {
               <td>{sale.totalSellingPrice}</td>
               <td>
                 <Button
-                  variant="danger"
+                  className="bg-transparent "
                   size="sm"
                   onClick={() => handleRemoveRow(sale.id)}
                 >

@@ -19,7 +19,7 @@ export const createUser = async (data) => {
     name: data.name,
     email: data.email,
     password: hashedPassword,
-    role: "user",
+    role: "superadmin",
     is_primary_admin: data.isPrimaryAdmin || false,
   });
 };

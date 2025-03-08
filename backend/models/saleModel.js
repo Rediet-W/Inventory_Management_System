@@ -11,7 +11,6 @@ const Sale = sequelize.define(
       primaryKey: true,
       allowNull: false,
     },
-
     name: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -40,6 +39,10 @@ const Sale = sequelize.define(
     },
     seller: {
       type: DataTypes.STRING(255),
+      allowNull: false,
+    },
+    averageCost: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
   },

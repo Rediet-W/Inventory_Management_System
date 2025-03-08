@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Button,
   Form,
@@ -53,7 +53,14 @@ const AddProductPage = () => {
       },
     ]);
   };
-
+  const totalPurchase = useMemo(() => {
+    return (
+      completedPurchases?.reduce(
+        (total, product) => total + product.unitCost * product.quantity,
+        0
+      ) || 0
+    );
+  }, [products]);
   const removeRow = (index) => {
     const updatedProducts = products.filter((_, i) => i !== index);
     setProducts(updatedProducts);
@@ -73,7 +80,7 @@ const AddProductPage = () => {
         ...product,
         unitCost: parseFloat(product.unitCost),
         quantity: parseFloat(product.quantity),
-        purchaser: userInfo.name, // Automatically set purchaser
+        purchaser: userInfo.name,
       }));
 
       for (const product of purchaseData) {
@@ -88,14 +95,13 @@ const AddProductPage = () => {
       setErrorMessage(error?.message || "Failed to add purchases. Try again.");
     }
   };
-
   return (
     <Container className="mt-5">
       <Row className="justify-content-center">
         <Col md={10}>
           <Card className="shadow-sm">
             <Card.Body>
-              <h2 className="text-center mb-4">Add New Products</h2>
+              <h2 className="text-center mb-4">Add Purchases</h2>
 
               {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
@@ -109,6 +115,7 @@ const AddProductPage = () => {
                       <th>UOM</th>
                       <th>Quantity</th>
                       <th>Unit Cost</th>
+                      <th>Total Cost</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -179,6 +186,13 @@ const AddProductPage = () => {
                           />
                         </td>
                         <td>
+                          <Form.Control
+                            type="number"
+                            value={product.unitCost * product.quantity}
+                            disabled
+                          />
+                        </td>
+                        <td>
                           {products.length > 1 && (
                             <Button
                               variant="danger"
@@ -190,12 +204,16 @@ const AddProductPage = () => {
                         </td>
                       </tr>
                     ))}
+                    <tr className="fw-bold">
+                      <td colSpan="6">Total </td>
+                      <td colSpan="2">{totalPurchase} ETB</td>
+                    </tr>
                   </tbody>
                 </Table>
-                <Button variant="secondary" onClick={addRow} className="me-2">
+                <Button variant="primary" onClick={addRow} className="me-2">
                   + Add Row
                 </Button>
-                <Button variant="primary" type="submit" disabled={isLoading}>
+                <Button variant="success" type="submit" disabled={isLoading}>
                   {isLoading ? "Adding..." : "Submit Purchases"}
                 </Button>
               </Form>
@@ -222,11 +240,13 @@ const AddProductPage = () => {
           >
             No, Thanks
           </Button>
+
           <PDFDownloadLink
             document={
               <PurchasePDF
                 purchases={completedPurchases}
                 date={new Date().toLocaleDateString()}
+                totalPurchase={totalPurchase}
               />
             }
             fileName="Purchase_Receipt.pdf"

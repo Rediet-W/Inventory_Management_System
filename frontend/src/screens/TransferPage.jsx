@@ -221,7 +221,7 @@ const TransferPage = () => {
               </td>
               <td>
                 <Button
-                  variant="danger"
+                  className="bg-transparent"
                   size="sm"
                   onClick={() => handleRemoveRow(transfer.id)}
                 >

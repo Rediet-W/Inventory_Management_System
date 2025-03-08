@@ -61,10 +61,10 @@ const PurchasesPDF = ({ purchases, totalPurchases, header, dateRange }) => (
             <Text style={styles.tableCell}>Quantity</Text>
           </View>
           <View style={styles.tableCol}>
-            <Text style={styles.tableCell}>Unit Cost</Text>
+            <Text style={styles.tableCell}>Unit Cost(ETB)</Text>
           </View>
           <View style={styles.tableCol}>
-            <Text style={styles.tableCell}>Total Cost</Text>
+            <Text style={styles.tableCell}>Total Cost(ETB)</Text>
           </View>
         </View>
 
@@ -84,11 +84,11 @@ const PurchasesPDF = ({ purchases, totalPurchases, header, dateRange }) => (
               <Text style={styles.tableCell}>{purchase.quantity}</Text>
             </View>
             <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{purchase.unitCost} ETB</Text>
+              <Text style={styles.tableCell}>{purchase.unitCost} </Text>
             </View>
             <View style={styles.tableCol}>
               <Text style={styles.tableCell}>
-                {purchase.quantity * purchase.unitCost} ETB
+                {purchase.quantity * purchase.unitCost}
               </Text>
             </View>
           </View>

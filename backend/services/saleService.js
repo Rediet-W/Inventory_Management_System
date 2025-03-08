@@ -1,5 +1,6 @@
 import Sale from "../models/saleModel.js";
 import Shop from "../models/shopModel.js";
+import Product from "../models/productModel.js";
 import { Op } from "sequelize";
 
 export const getSalesByDateRange = async (startDate, endDate) => {
@@ -36,6 +37,9 @@ export const createSale = async (data) => {
   const shopProduct = await Shop.findOne({
     where: { batchNumber: data.batchNumber },
   });
+  const product = await Product.findOne({
+    where: { batchNumber: data.batchNumber },
+  });
 
   if (!shopProduct) return { error: "Shop product not found" };
 
@@ -52,14 +56,15 @@ export const createSale = async (data) => {
     quantity: data.quantity,
     unitSellingPrice: shopProduct.sellingPrice,
     seller: data.seller,
+    averageCost: product.averageCost,
   });
 
   shopProduct.quantity -= data.quantity;
   if (shopProduct.quantity === 0) {
-    await shopProduct.destroy();
-  } else {
-    await shopProduct.save();
+    shopProduct.sellingPrice = 0;
   }
+
+  await shopProduct.save();
 
   return sale;
 };

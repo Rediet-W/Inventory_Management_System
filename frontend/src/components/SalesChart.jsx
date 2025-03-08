@@ -111,7 +111,7 @@ const SalesOverview = () => {
       <Col xs={12} md={8}>
         <Card className="shadow-sm p-3">
           <div className="d-flex justify-content-between align-items-center">
-            <h5 className="text-primary">Sales Overview</h5>
+            <h5 className="text-primary">Revenue </h5>
             <Dropdown>
               <Dropdown.Toggle variant="outline-primary" size="sm">
                 {timeRange === "last7days"

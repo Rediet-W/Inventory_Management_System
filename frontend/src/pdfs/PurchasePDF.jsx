@@ -44,20 +44,24 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 10,
     textAlign: "start",
-    gap: 3,
+    gap: 4,
   },
   signatureLine: {
     borderBottom: "1px dashed black",
     width: "25%",
     alignSelf: "center",
   },
+  topic: {
+    fontWeight: "bold",
+    marginVertical: "8px",
+  },
 });
 
-const PurchasePDF = ({ purchases, date }) => (
+const PurchasePDF = ({ purchases, date, totalPurchase }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       {/* Header */}
-      <Text style={styles.header}>Products to Shop</Text>
+      <Text style={styles.header}>Purchased Items</Text>
       <Text style={styles.date}>Date: {date}</Text>
 
       {/* Table */}
@@ -82,6 +86,9 @@ const PurchasePDF = ({ purchases, date }) => (
           <View style={styles.tableCol}>
             <Text style={styles.tableCell}>Unit Cost</Text>
           </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}>Total Cost</Text>
+          </View>
         </View>
 
         {/* Table Rows */}
@@ -105,18 +112,53 @@ const PurchasePDF = ({ purchases, date }) => (
             <View style={styles.tableCol}>
               <Text style={styles.tableCell}>{purchase.unitCost}</Text>
             </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>
+                {purchase.unitCost * purchase.quantity}
+              </Text>
+            </View>
           </View>
         ))}
+        <View style={styles.tableRow}>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}>Total</Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}>{totalPurchase} ETB</Text>
+          </View>
+        </View>
       </View>
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text>I have received the above listed items</Text>
+        <Text style={styles.topic}>I have received the above listed items</Text>
+        <Text>Signature: </Text>
+        <View style={styles.signatureLine} />
         <Text>Name: </Text>
         <View style={styles.signatureLine} />
         <Text>Date: </Text>
         <View style={styles.signatureLine} />
+        <Text style={styles.topic}>PURCHASER</Text>
         <Text>Signature: </Text>
+        <View style={styles.signatureLine} />
+        <Text>Name: </Text>
+        <View style={styles.signatureLine} />
+        <Text>Date: </Text>
         <View style={styles.signatureLine} />
       </View>
     </Page>

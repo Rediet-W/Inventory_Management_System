@@ -38,7 +38,11 @@ export const createTransfer = async (data) => {
   }
 
   product.quantity -= data.quantity;
-
+  if (product.quantity === 0) {
+    product.sellingPrice = 0;
+    product.averageCost = 0;
+    product.totalCost = 0;
+  }
   await product.save();
 
   const shopProduct = await Shop.findOne({

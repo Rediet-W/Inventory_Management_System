@@ -28,7 +28,7 @@ const ManagementPage = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
 
   useEffect(() => {
     refetch();
@@ -285,6 +285,18 @@ const ManagementPage = () => {
           })}
         </tbody>
       </Table>
+      {/* Pagination */}
+      <Pagination className="justify-content-center mt-4">
+        {[...Array(totalPages).keys()].map((number) => (
+          <Pagination.Item
+            key={number + 1}
+            active={number + 1 === currentPage}
+            onClick={() => handlePageChange(number + 1)}
+          >
+            {number + 1}
+          </Pagination.Item>
+        ))}
+      </Pagination>
     </div>
   );
 };

@@ -51,6 +51,10 @@ const styles = StyleSheet.create({
     width: "25%",
     alignSelf: "center",
   },
+  topic: {
+    fontWeight: "bold",
+    marginVertical: "8px",
+  },
 });
 
 const TransferPDF = ({ transfers, date }) => (
@@ -125,12 +129,19 @@ const TransferPDF = ({ transfers, date }) => (
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text>I have received the above listed items</Text>
+        <Text style={styles.topic}>I have received the above listed items</Text>
+        <Text>Signature: </Text>
+        <View style={styles.signatureLine} />
         <Text>Name: </Text>
         <View style={styles.signatureLine} />
         <Text>Date: </Text>
         <View style={styles.signatureLine} />
+        <Text style={styles.topic}>DELIVERED BY</Text>
         <Text>Signature: </Text>
+        <View style={styles.signatureLine} />
+        <Text>Name: </Text>
+        <View style={styles.signatureLine} />
+        <Text>Date: </Text>
         <View style={styles.signatureLine} />
       </View>
     </Page>
