@@ -5,6 +5,18 @@ export const getAllRequestedProducts = async () => {
 };
 
 export const createRequestedProduct = async (data) => {
+  const existingProduct = await RequestedProduct.findOne({
+    where: { name: data.name },
+  });
+
+  if (existingProduct) {
+    // ✅ If product exists, increase the quantity instead of adding a new one
+    existingProduct.quantity += data.quantity || 1;
+    await existingProduct.save();
+    return existingProduct;
+  }
+
+  // ✅ If product does not exist, create a new one
   return await RequestedProduct.create({
     name: data.name,
     description: data.description,

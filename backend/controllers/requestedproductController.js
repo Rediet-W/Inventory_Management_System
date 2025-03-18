@@ -34,7 +34,7 @@ export const createRequestedProduct = asyncHandler(async (req, res) => {
     if (!description) errors.push("Description is required");
     if (quantity <= 0 || isNaN(quantity))
       errors.push("Quantity must be a valid number greater than 0");
-    if (!["pending", "purchased", "fulfilled"].includes(status))
+    if (!["pending", "purchased"].includes(status))
       errors.push("Invalid status value");
 
     if (errors.length > 0) {
@@ -49,10 +49,11 @@ export const createRequestedProduct = asyncHandler(async (req, res) => {
 
     const requestedProduct =
       await requestedProductService.createRequestedProduct(req.body);
+
     sendResponse(
       res,
       true,
-      "Requested product created successfully",
+      "Requested product added or updated successfully",
       requestedProduct
     );
   } catch (error) {

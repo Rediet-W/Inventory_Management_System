@@ -24,7 +24,7 @@ const RequestedProduct = sequelize.define(
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM("pending", "purchased", "fulfilled"),
+      type: DataTypes.ENUM("pending", "purchased"),
       defaultValue: "pending",
       allowNull: false,
     },

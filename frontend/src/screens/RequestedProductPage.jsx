@@ -10,6 +10,7 @@ import {
   Spinner,
   Alert,
   Pagination,
+  InputGroup,
 } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -19,7 +20,7 @@ import {
   useUpdateRequestedProductMutation,
 } from "../slices/requestedProductApiSlice";
 import { triggerRefresh } from "../slices/refreshSlice";
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaSearch } from "react-icons/fa";
 
 const RequestedProductsPage = () => {
   const dispatch = useDispatch();
@@ -47,10 +48,11 @@ const RequestedProductsPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [inputStatuses, setInputStatuses] = useState({}); // Store status edits
+  const [editableQuantities, setEditableQuantities] = useState({});
 
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 10;
-
+  const [searchQuery, setSearchQuery] = useState("");
   useEffect(() => {
     refetch();
   }, [refreshKey, refetch]);
@@ -68,12 +70,11 @@ const RequestedProductsPage = () => {
     setStatus("pending");
   };
 
-  // ✅ Handle Add Product
   const handleAddProduct = async () => {
     setErrorMessage("");
     try {
       const response = await createRequestedProduct({
-        name, // ✅ Correct field name
+        name,
         description,
         quantity,
         status,
@@ -88,7 +89,6 @@ const RequestedProductsPage = () => {
     }
   };
 
-  // ✅ Handle Delete Product
   const handleDelete = async () => {
     if (
       window.confirm("Are you sure you want to delete the selected products?")
@@ -108,7 +108,6 @@ const RequestedProductsPage = () => {
     }
   };
 
-  // ✅ Handle Status Update
   const handleStatusChange = async (productId) => {
     const newStatus = inputStatuses[productId] || "pending";
 
@@ -131,8 +130,11 @@ const RequestedProductsPage = () => {
         : [...prev, productId]
     );
   };
+  const filteredProducts = requestedProducts?.filter((product) =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const sortedRequestedProducts = requestedProducts
+  const sortedRequestedProducts = filteredProducts
     ?.slice()
     .sort((a, b) => b.quantity - a.quantity);
 
@@ -148,6 +150,40 @@ const RequestedProductsPage = () => {
   );
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
+  const handleQuantityUpdate = async (productId) => {
+    const newQuantity = parseInt(editableQuantities[productId], 10);
+
+    const product = requestedProducts?.find((p) => p.id === productId);
+    if (
+      !product ||
+      isNaN(newQuantity) ||
+      newQuantity <= 0 ||
+      newQuantity === product.quantity
+    ) {
+      setEditableQuantities((prev) => ({
+        ...prev,
+        [productId]: undefined,
+      }));
+      return;
+    }
+
+    try {
+      await updateRequestedProduct({
+        id: productId,
+        quantity: newQuantity,
+      }).unwrap();
+      dispatch(triggerRefresh());
+    } catch (err) {
+      console.error("❌ Failed to update quantity:", err);
+      setErrorMessage(err?.data?.message || "Error updating quantity.");
+    } finally {
+      setEditableQuantities((prev) => ({
+        ...prev,
+        [productId]: undefined,
+      }));
+    }
+  };
 
   return (
     <Container className="mt-5">
@@ -174,7 +210,21 @@ const RequestedProductsPage = () => {
           </Col>
         )}
       </Row>
-
+      <Row className="justify-content-end mb-3">
+        <Col md={4}>
+          <InputGroup>
+            <InputGroup.Text>
+              <FaSearch />
+            </InputGroup.Text>
+            <Form.Control
+              type="text"
+              placeholder="Search by product name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </InputGroup>
+        </Col>
+      </Row>
       {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
       {isLoading ? (
@@ -198,7 +248,39 @@ const RequestedProductsPage = () => {
               <tr key={product.id}>
                 <td>{product.name}</td>
                 <td>{product.description}</td>
-                <td>{product.quantity}</td>
+                <td
+                  onClick={() => {
+                    if (userInfo?.role !== "admin") {
+                      setEditableQuantities((prev) => ({
+                        ...prev,
+                        [product.id]: product.quantity,
+                      }));
+                    }
+                  }}
+                >
+                  {userInfo?.role !== "admin" &&
+                  editableQuantities[product.id] !== undefined ? (
+                    <Form.Control
+                      type="number"
+                      min="1"
+                      value={editableQuantities[product.id]}
+                      onChange={(e) =>
+                        setEditableQuantities({
+                          ...editableQuantities,
+                          [product.id]: e.target.value,
+                        })
+                      }
+                      onBlur={() => handleQuantityUpdate(product.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleQuantityUpdate(product.id);
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    product.quantity
+                  )}
+                </td>
+
                 <td>
                   {userInfo?.role === "admin" ? (
                     <Form.Select
@@ -213,7 +295,6 @@ const RequestedProductsPage = () => {
                     >
                       <option value="pending">Pending</option>
                       <option value="purchased">Purchased</option>
-                      <option value="fulfilled">Fulfilled</option>
                     </Form.Select>
                   ) : (
                     product.status
