@@ -110,3 +110,42 @@ export const getPurchaseByDateRange = async (startDate, endDate) => {
     },
   });
 };
+
+export const updatePurchase = async (id, data) => {
+  const purchase = await Purchase.findByPk(id);
+  if (!purchase) return null;
+
+  // Check if the purchase is within the last 10 hours
+  const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000);
+  if (purchase.createdAt < tenHoursAgo) {
+    throw new Error("Edits are only allowed within 10 hours of purchase.");
+  }
+
+  // Calculate the new total cost for the updated purchase
+  const newPurchaseTotalCost = data.quantity * data.unitCost;
+
+  // Find the associated product
+  const product = await Product.findOne({
+    where: { batchNumber: purchase.batchNumber },
+  });
+
+  if (product) {
+    // Reverse the effect of the old purchase
+    const oldPurchaseTotalCost = purchase.quantity * purchase.unitCost;
+    const newQuantity = product.quantity - purchase.quantity + data.quantity;
+    const newTotalCost =
+      product.totalCost - oldPurchaseTotalCost + newPurchaseTotalCost;
+
+    // Update the product
+    await product.update({
+      quantity: newQuantity,
+      totalCost: newTotalCost,
+      averageCost: newTotalCost / newQuantity,
+    });
+  }
+
+  // Update the purchase
+  await purchase.update(data);
+
+  return purchase;
+};

@@ -4,8 +4,7 @@ import { useGetShopProductsQuery } from "../slices/shopApiSlice";
 import { useAddSaleMutation } from "../slices/salesApiSlice";
 import { triggerRefresh } from "../slices/refreshSlice";
 import { useSelector, useDispatch } from "react-redux";
-import { saveAs } from "file-saver";
-import * as XLSX from "xlsx";
+// import { saveAs } from "file-saver";
 
 const SalesPage = () => {
   const dispatch = useDispatch();

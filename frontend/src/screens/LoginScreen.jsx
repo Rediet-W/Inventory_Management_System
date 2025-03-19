@@ -28,8 +28,6 @@ const LoginScreen = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     try {
-      console.log("📤 Sending Login Request with:", { email, password });
-
       const res = await login({ email, password }).unwrap();
       console.log("✅ Login Response:", res);
 
@@ -52,7 +50,11 @@ const LoginScreen = () => {
   return (
     <FormContainer>
       <h1>Welcome Back!</h1>
-
+      {err?.data?.message && (
+        <div className="alert alert-danger" role="alert">
+          {err.data.message}
+        </div>
+      )}
       <Form onSubmit={submitHandler}>
         <Form.Group className="my-2" controlId="email">
           <Form.Label>Email Address</Form.Label>

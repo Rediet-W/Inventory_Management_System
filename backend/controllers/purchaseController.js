@@ -187,3 +187,50 @@ export const getPurchaseByDateRange = asyncHandler(async (req, res) => {
     ]);
   }
 });
+
+// @desc    Update a purchase
+// @route   PUT /api/purchases/:id
+// @access  Private (Admin only)
+export const updatePurchase = asyncHandler(async (req, res) => {
+  try {
+    const purchaseId = req.params.id;
+    const {
+      name,
+      batchNumber,
+      unitOfMeasurement,
+      quantity,
+      unitCost,
+      purchaser,
+      reference,
+    } = req.body;
+
+    const errors = [];
+
+    // Input validation
+    if (!name) errors.push("Product name is required");
+    if (!batchNumber) errors.push("Batch number is required");
+    if (!unitOfMeasurement) errors.push("Unit of measurement is required");
+    if (!quantity || isNaN(quantity) || quantity <= 0)
+      errors.push("Quantity must be a valid number greater than 0");
+    if (!unitCost || isNaN(unitCost) || unitCost <= 0)
+      errors.push("Unit cost must be a valid number greater than 0");
+    if (!purchaser) errors.push("Purchaser name is required");
+
+    if (errors.length > 0) {
+      return sendResponse(res, false, "Invalid purchase input", null, errors);
+    }
+
+    // Update the purchase
+    const updatedPurchase = await purchaseService.updatePurchase(
+      purchaseId,
+      req.body
+    );
+
+    sendResponse(res, true, "Purchase updated successfully", updatedPurchase);
+  } catch (error) {
+    console.error("❌ Error updating purchase:", error);
+    sendResponse(res, false, "Failed to update purchase", null, [
+      error.message,
+    ]);
+  }
+});
