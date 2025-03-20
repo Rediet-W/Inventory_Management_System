@@ -53,14 +53,19 @@ const AddProductPage = () => {
       },
     ]);
   };
+
   const totalPurchase = useMemo(() => {
     return (
-      completedPurchases?.reduce(
-        (total, product) => total + product.unitCost * product.quantity,
+      products.reduce(
+        (total, product) =>
+          total +
+          (parseFloat(product.unitCost) || 0) *
+            (parseFloat(product.quantity) || 0),
         0
       ) || 0
     );
-  }, [products]);
+  }, [products]); // Dependency array updated to `products`
+
   const removeRow = (index) => {
     const updatedProducts = products.filter((_, i) => i !== index);
     setProducts(updatedProducts);

@@ -1,11 +1,24 @@
 import React from "react";
-import { Page, Text, View, Document, StyleSheet } from "@react-pdf/renderer";
+import {
+  Page,
+  Text,
+  View,
+  Document,
+  StyleSheet,
+  Image,
+} from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: {
     flexDirection: "column",
     padding: 20,
     fontFamily: "Noto Sans Ethiopic",
+  },
+  logo: {
+    width: 80, // Adjust size as needed
+    height: 80,
+    marginBottom: 10,
+    alignSelf: "center", // Centers the logo
   },
   table: {
     display: "table",
@@ -42,9 +55,17 @@ const styles = StyleSheet.create({
   },
 });
 
-const SalesPDF = ({ sales, totalSales, header, dateRange, totalCost }) => (
+const SalesPDF = ({
+  sales,
+  totalSales,
+  header,
+  dateRange,
+  totalCost,
+  logo,
+}) => (
   <Document>
     <Page size="A4" style={styles.page}>
+      <Image style={styles.logo} src={logo} />
       {/* Custom Header */}
       <Text style={styles.header}>{header}</Text>
 

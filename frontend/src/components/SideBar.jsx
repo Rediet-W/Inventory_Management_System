@@ -169,18 +169,21 @@ const Sidebar = () => {
           <Link
             to="/"
             className={`nav-link d-flex align-items-center ${
-              location.pathname === "/" ? "bg-white text-black" : "text-light"
+              location.pathname === "/dashboard"
+                ? "bg-white text-black"
+                : "text-light"
             }`}
             style={{
               padding: "10px",
               transition: "background 0.3s",
               borderRadius: "4px",
-              background: location.pathname === "/" ? "#0056b3" : "transparent",
+              background:
+                location.pathname === "/dashboard" ? "#0056b3" : "transparent",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#0056b3")}
             onMouseLeave={(e) =>
               (e.currentTarget.style.background =
-                location.pathname === "/" ? "#0056b3" : "transparent")
+                location.pathname === "/dashboard" ? "#0056b3" : "transparent")
             }
           >
             <FaHome />

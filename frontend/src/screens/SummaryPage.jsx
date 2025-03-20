@@ -16,6 +16,7 @@ import { FaDownload } from "react-icons/fa";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import SalesPDF from "./SalesPdf";
 import PurchasesPDF from "./PurchasePdf";
+import finote from "/logo.jpg";
 
 const SummaryPage = () => {
   const [startDate, setStartDate] = useState("");
@@ -138,6 +139,7 @@ const SummaryPage = () => {
                     header="የፍኖተ ጽድቅ ሰ/ት/ቤት የንዋየ ቅድሳት መሸጫ ሱቅ"
                     dateRange={`From ${startDate} to ${endDate}`}
                     totalCost={totalCost}
+                    logo={finote}
                   />
                 }
                 fileName="sales_report.pdf"
@@ -195,6 +197,7 @@ const SummaryPage = () => {
                     totalPurchases={totalPurchases}
                     header="የፍኖተ ጽድቅ ሰ/ት/ቤት የንዋየ ቅድሳት መሸጫ ሱቅ"
                     dateRange={` ${startDate} - ${endDate}`}
+                    logo={finote}
                   />
                 }
                 fileName="purchases_report.pdf"
