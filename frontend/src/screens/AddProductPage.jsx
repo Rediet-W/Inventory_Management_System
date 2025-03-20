@@ -66,14 +66,17 @@ const AddProductPage = () => {
     );
   }, [products]); 
 
-  const totalPurchase2 = useMemo(() => {
-    return (
-      completedPurchases?.reduce(
-        (total, product) => total + product.unitCost * product.quantity,
-        0
-      ) || 0
-    );
-  }, [products]);
+ const totalPurchase2 = useMemo(() => {
+  return (
+    completedPurchases.reduce(
+      (total, product) =>
+        total +
+        (parseFloat(product.unitCost) || 0) *
+          (parseFloat(product.quantity) || 0),
+      0
+    ) || 0
+  );
+}, [completedPurchases]);
 
   const removeRow = (index) => {
     const updatedProducts = products.filter((_, i) => i !== index);
@@ -101,9 +104,13 @@ const AddProductPage = () => {
         await createPurchase(product).unwrap();
       }
 
-      setCompletedPurchases(products); // Save completed purchases for PDF
-      setProducts([]); // Clear the form
-      setShowDownloadModal(true); // Show the download modal
+      setCompletedPurchases(purchaseData);
+
+    setTimeout(() => {
+      setShowDownloadModal(true);
+    }, 100); 
+      setProducts([]); 
+      setShowDownloadModal(true);
     } catch (error) {
       console.error("❌ Error adding purchases:", error);
       setErrorMessage(error?.message || "Failed to add purchases. Try again.");
