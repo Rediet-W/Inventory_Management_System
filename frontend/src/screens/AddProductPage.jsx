@@ -64,7 +64,19 @@ const AddProductPage = () => {
         0
       ) || 0
     );
-  }, [products]); // Dependency array updated to `products`
+  }, [products]);
+
+  const totalPurchase2 = useMemo(() => {
+    return (
+      completedPurchases.reduce(
+        (total, product) =>
+          total +
+          (parseFloat(product.unitCost) || 0) *
+            (parseFloat(product.quantity) || 0),
+        0
+      ) || 0
+    );
+  }, [products]);
 
   const removeRow = (index) => {
     const updatedProducts = products.filter((_, i) => i !== index);
@@ -251,7 +263,7 @@ const AddProductPage = () => {
               <PurchasePDF
                 purchases={completedPurchases}
                 date={new Date().toLocaleDateString()}
-                totalPurchase={totalPurchase}
+                totalPurchase={totalPurchase2}
               />
             }
             fileName="Purchase_Receipt.pdf"
