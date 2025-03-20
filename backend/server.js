@@ -30,6 +30,7 @@ const startServer = async () => {
           const allowedOrigins = [
             "http://localhost:3000", // Local development
             "https://inventory-management-system.vercel.app", // Stable production URL
+            "https://inventory-management-system-beta.vercel.app"
           ];
 
           if (!origin || allowedOrigins.includes(origin)) {
