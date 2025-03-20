@@ -11,7 +11,7 @@ const HomePage = () => {
   return (
     <Container className="mt-3 w-full">
       <Row className="align-items-center ">
-        <h1 className="mt-3 fw-bold">Welcome {userInfo.name},</h1>
+        <h1 className="mt-3 fw-bold">Welcome {userInfo?.name},</h1>
       </Row>
 
       <>

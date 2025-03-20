@@ -49,6 +49,11 @@ const Sidebar = () => {
           icon: <FaShoppingCart />,
         },
         userInfo?.role !== "superadmin" && {
+          to: "/dailysales",
+          label: "Daily Sales",
+          icon: <FaChartLine />,
+        },
+        userInfo?.role !== "superadmin" && {
           to: "/shopcard",
           label: "Shop Card",
           icon: <FaListAlt />,

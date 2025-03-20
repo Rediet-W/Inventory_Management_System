@@ -18,6 +18,7 @@ const LoginScreen = () => {
   const [login, { isLoading }] = useLoginMutation();
 
   const { userInfo } = useSelector((state) => state.auth);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (userInfo) {
@@ -33,6 +34,7 @@ const LoginScreen = () => {
 
       if (!res.token) {
         console.error("❌ No token received in response:", res);
+        setErrorMessage(err?.data?.message || err.error);
         toast.error("Login failed. No token received.");
         return;
       }
@@ -50,11 +52,12 @@ const LoginScreen = () => {
   return (
     <FormContainer>
       <h1>Welcome Back!</h1>
-      {err?.data?.message && (
+      {errorMessage && (
         <div className="alert alert-danger" role="alert">
-          {err.data.message}
+          {errorMessage}
         </div>
       )}
+
       <Form onSubmit={submitHandler}>
         <Form.Group className="my-2" controlId="email">
           <Form.Label>Email Address</Form.Label>

@@ -28,6 +28,7 @@ import AnalysisPage from "./screens/AnalysisPage.jsx";
 import TransferPage from "./screens/TransferPage.jsx";
 import StockCard from "./screens/StockCard.jsx";
 import ShopCardPage from "./screens/ShopCard.jsx";
+import DailySalesPage from "./screens/DailySalesPage.jsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -49,6 +50,7 @@ const router = createBrowserRouter(
       <Route path="/transfer" element={<TransferPage />} />
       <Route path="/stockcard" element={<StockCard />} />
       <Route path="/shopcard" element={<ShopCardPage />} />
+      <Route path="/dailysales" element={<DailySalesPage />} />
     </Route>
   )
 );
