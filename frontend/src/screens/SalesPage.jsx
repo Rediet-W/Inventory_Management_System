@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { Table, Button, Row, Col, Form, Alert } from "react-bootstrap";
+import { Table, Button, Row, Col, Form, Spinner } from "react-bootstrap";
 import { useGetShopProductsQuery } from "../slices/shopApiSlice";
 import { useAddSaleMutation } from "../slices/salesApiSlice";
 import { triggerRefresh } from "../slices/refreshSlice";
 import { useSelector, useDispatch } from "react-redux";
-// import { saveAs } from "file-saver";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const SalesPage = () => {
   const dispatch = useDispatch();
   const { data: shopData, isLoading, error } = useGetShopProductsQuery();
   const [addSale, { isLoading: isSubmitting }] = useAddSaleMutation();
+  const { userInfo } = useSelector((state) => state.auth);
 
   const [sales, setSales] = useState([]);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const { userInfo } = useSelector((state) => state.auth);
   const [date] = useState(new Date().toISOString().split("T")[0]);
 
   useEffect(() => {
@@ -94,10 +94,13 @@ const SalesPage = () => {
       (s) => s.quantitySold > s.qty || s.quantitySold <= 0
     );
     if (invalidSales.length > 0) {
-      setErrorMessage(
-        "❌ Ensure sale quantity is valid and does not exceed available stock."
+      toast.error(
+        "Ensure sale quantity is valid and does not exceed available stock.",
+        {
+          position: "top-center",
+          autoClose: 5000,
+        }
       );
-      setTimeout(() => setErrorMessage(null), 5000);
       return;
     }
 
@@ -116,130 +119,140 @@ const SalesPage = () => {
         )
       );
 
-      alert("✅ Sales recorded successfully!");
+      toast.success("Sales recorded successfully!", {
+        position: "top-center",
+        autoClose: 3000,
+      });
       dispatch(triggerRefresh());
       setSales([]);
-      setErrorMessage(null);
     } catch (error) {
-      setErrorMessage("❌ Failed to record sales.");
+      toast.error("Failed to record sales", {
+        position: "top-center",
+        autoClose: 5000,
+      });
     }
   };
 
-  const handleDownload = () => {
-    const exportData = sales.map((s) => ({
-      "No.": sales.indexOf(s) + 1,
-      Product: s.product,
-      "Batch No.": s.batchNumber,
-      UOM: s.unitOfMeasurement,
-      "Selling Price": s.sellingPrice,
-      "Qty in Store": s.qty,
-      "Qty Sold": s.quantitySold,
-      "Total Selling Price": s.totalSellingPrice,
-      Cashier: userInfo.name,
-      Date: date,
-    }));
+  if (isLoading)
+    return (
+      <div className="d-flex justify-content-center mt-5">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const data = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
-    });
-    saveAs(data, "Sales.xlsx");
-  };
-
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <Alert variant="danger">Error loading products</Alert>;
+  if (error)
+    return (
+      <div className="alert alert-danger mt-4">Error loading products</div>
+    );
 
   return (
-    <div className="container mt-5">
-      <h3 className="text-center">Sales Entry</h3>
-      <h4 className="text-center">Date: {date}</h4>
+    <div className="container-fluid p-4">
+      <div className="card border-0 shadow-sm">
+        <div className="card-body">
+          <h3 className="card-title text-center mb-4">Sales Entry</h3>
+          <h5 className="text-center text-muted mb-4">Date: {date}</h5>
 
-      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+          <Row className="mb-4">
+            <Col md={9}>
+              <Button
+                variant="outline-primary"
+                onClick={handleAddRow}
+                className="rounded-pill px-4"
+              >
+                + Add Row
+              </Button>
+            </Col>
+            <Col md={3} className="text-end">
+              <Button
+                variant="primary"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="rounded-pill px-4"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Spinner as="span" animation="border" size="sm" />{" "}
+                    Processing...
+                  </>
+                ) : (
+                  "Submit Sales"
+                )}
+              </Button>
+            </Col>
+          </Row>
 
-      <Row className="mb-3 mt-3">
-        <Col md={9}>
-          <Button variant="primary" onClick={handleAddRow}>
-            + Add Row
-          </Button>
-        </Col>
-        <Col md={3} className="text-end">
-          <Button
-            variant="success"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Processing..." : "Submit Sales"}
-          </Button>
-        </Col>
-      </Row>
-
-      <Table striped bordered hover responsive className="table-sm mt-3">
-        <thead>
-          <tr>
-            <th>No.</th>
-            <th>Product</th>
-            <th>Batch No.</th>
-            <th>UOM</th>
-            <th>Selling Price per unit</th>
-            <th>Qty in Store</th>
-            <th>Qty Sold</th>
-            <th>Total Selling Price</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sales.map((sale, index) => (
-            <tr key={sale.id}>
-              <td>{index + 1}</td>
-              <td>
-                <Form.Select
-                  value={sale.product}
-                  onChange={(e) => handleProductSelect(sale.id, e.target.value)}
-                  style={{ fontSize: "0.9rem" }}
-                >
-                  <option value="">Select Product</option>
-                  {shopData.allProducts.map((product) => (
-                    <option key={product.batchNumber} value={product.name}>
-                      {product.name}
-                    </option>
-                  ))}
-                </Form.Select>
-              </td>
-              <td>{sale.batchNumber}</td>
-              <td>{sale.unitOfMeasurement}</td>
-              <td>{sale.sellingPrice}</td>
-              <td>{sale.qty}</td>
-              <td>
-                <Form.Control
-                  type="number"
-                  value={sale.quantitySold}
-                  onChange={(e) =>
-                    handleQuantityChange(sale.id, e.target.value)
-                  }
-                  min="1"
-                  max={sale.qty}
-                />
-              </td>
-              <td>{sale.totalSellingPrice}</td>
-              <td>
-                <Button
-                  className="bg-transparent "
-                  size="sm"
-                  onClick={() => handleRemoveRow(sale.id)}
-                >
-                  ❌
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+          <div className="table-responsive">
+            <Table hover className="align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Product</th>
+                  <th>Batch No.</th>
+                  <th>UOM</th>
+                  <th>Unit Price</th>
+                  <th>In Stock</th>
+                  <th>Qty Sold</th>
+                  <th>Total</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sales.map((sale, index) => (
+                  <tr key={sale.id}>
+                    <td>{index + 1}</td>
+                    <td>
+                      <Form.Select
+                        value={sale.product}
+                        onChange={(e) =>
+                          handleProductSelect(sale.id, e.target.value)
+                        }
+                        className="form-select-sm"
+                      >
+                        <option value="">Select Product</option>
+                        {shopData.allProducts.map((product) => (
+                          <option
+                            key={product.batchNumber}
+                            value={product.name}
+                          >
+                            {product.name}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </td>
+                    <td>{sale.batchNumber}</td>
+                    <td>{sale.unitOfMeasurement}</td>
+                    <td>{sale.sellingPrice}</td>
+                    <td>{sale.qty}</td>
+                    <td>
+                      <Form.Control
+                        type="number"
+                        value={sale.quantitySold}
+                        onChange={(e) =>
+                          handleQuantityChange(sale.id, e.target.value)
+                        }
+                        min="1"
+                        max={sale.qty}
+                        className="form-control-sm"
+                      />
+                    </td>
+                    <td>{sale.totalSellingPrice}</td>
+                    <td>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleRemoveRow(sale.id)}
+                        className="rounded-circle"
+                      >
+                        <i className="bi bi-x"></i>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

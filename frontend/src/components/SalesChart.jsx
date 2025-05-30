@@ -8,12 +8,22 @@ import {
   Tooltip,
   CartesianGrid,
   ResponsiveContainer,
+  Cell,
 } from "recharts";
 import {
   useGetAllSalesQuery,
   useGetSalesByDateRangeQuery,
 } from "../slices/salesApiSlice";
 import moment from "moment";
+
+const COLORS = [
+  "#1E43FA",
+  "#4CAF50",
+  "#FF9800",
+  "#9C27B0",
+  "#F44336",
+  "#607D8B",
+];
 
 const SalesOverview = () => {
   const [timeRange, setTimeRange] = useState("last7days");
@@ -108,74 +118,200 @@ const SalesOverview = () => {
   return (
     <Row className="g-4">
       {/* Sales Chart */}
-      <Col xs={12} md={8}>
-        <Card className="shadow-sm p-3">
-          <div className="d-flex justify-content-between align-items-center">
-            <h5 className="text-primary">Revenue </h5>
-            <Dropdown>
-              <Dropdown.Toggle variant="outline-primary" size="sm">
-                {timeRange === "last7days"
-                  ? "Last 7 Days"
-                  : timeRange === "monthly"
-                  ? "This Month"
-                  : "This Year"}
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item onClick={() => setTimeRange("last7days")}>
-                  Last 7 Days
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => setTimeRange("monthly")}>
-                  This Month
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => setTimeRange("yearly")}>
-                  This Year
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-          </div>
+      <Col xs={12} lg={8}>
+        <Card className="border-0 shadow-sm h-100">
+          <Card.Body className="p-4">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h5 className="mb-0 fw-semibold" style={{ color: "#1A1A1A" }}>
+                Sales Trend
+              </h5>
+              <Dropdown>
+                <Dropdown.Toggle
+                  variant="outline-primary"
+                  size="sm"
+                  className="d-flex align-items-center"
+                  style={{
+                    borderColor: "#E0E0E0",
+                    color: "#1E43FA",
+                    backgroundColor: "white",
+                    borderRadius: "8px",
+                    padding: "6px 12px",
+                  }}
+                >
+                  <span className="me-2">
+                    {timeRange === "last7days"
+                      ? "Last 7 Days"
+                      : timeRange === "monthly"
+                      ? "This Month"
+                      : "This Year"}
+                  </span>
+                </Dropdown.Toggle>
+                <Dropdown.Menu
+                  className="border-0 shadow-sm"
+                  style={{ borderRadius: "8px" }}
+                >
+                  <Dropdown.Item
+                    onClick={() => setTimeRange("last7days")}
+                    style={{
+                      borderRadius: "4px",
+                      color: timeRange === "last7days" ? "#1E43FA" : "#1A1A1A",
+                      fontWeight: timeRange === "last7days" ? "500" : "400",
+                    }}
+                  >
+                    Last 7 Days
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    onClick={() => setTimeRange("monthly")}
+                    style={{
+                      borderRadius: "4px",
+                      color: timeRange === "monthly" ? "#1E43FA" : "#1A1A1A",
+                      fontWeight: timeRange === "monthly" ? "500" : "400",
+                    }}
+                  >
+                    This Month
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    onClick={() => setTimeRange("yearly")}
+                    style={{
+                      borderRadius: "4px",
+                      color: timeRange === "yearly" ? "#1E43FA" : "#1A1A1A",
+                      fontWeight: timeRange === "yearly" ? "500" : "400",
+                    }}
+                  >
+                    This Year
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            </div>
 
-          {isLoading ? (
-            <div className="text-center">Loading...</div>
-          ) : error ? (
-            <div className="text-danger">Error loading sales data</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="sales" fill="#007bff" />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+            {isLoading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="text-center py-5 text-danger">
+                Error loading sales data
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={salesData}
+                  margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#F0F0F0"
+                  />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#666", fontSize: 12 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#666", fontSize: 12 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                    }}
+                  />
+                  <Bar
+                    dataKey="sales"
+                    radius={[4, 4, 0, 0]}
+                    barSize={timeRange === "yearly" ? 20 : 30}
+                  >
+                    {salesData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </Card.Body>
         </Card>
       </Col>
 
       {/* Best Sold Products */}
-      <Col xs={12} md={4}>
-        <Card className="shadow-sm p-3">
-          <h5 className="text-primary">Best Sold Products</h5>
-          {rangeLoading ? (
-            <div className="text-center">Loading...</div>
-          ) : rangeError ? (
-            <div className="text-danger">Error loading sales data</div>
-          ) : bestSoldProducts.length === 0 ? (
-            <div className="text-center text-muted">No sales data</div>
-          ) : (
-            bestSoldProducts.map((product, index) => (
-              <div key={index}>
-                <div className="d-flex justify-content-between align-items-center py-2">
-                  <span className="fw-bold">{index + 1}.</span>
-                  <span>{product.name}</span>
-                  <span className="fw-bold">{product.quantity}</span>
+      <Col xs={12} lg={4}>
+        <Card className="border-0 shadow-sm h-100">
+          <Card.Body className="p-4">
+            <h5 className="mb-4 fw-semibold" style={{ color: "#1A1A1A" }}>
+              Top Selling Items
+            </h5>
+            {rangeLoading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
                 </div>
-                {index !== bestSoldProducts.length - 1 && (
-                  <hr className="my-1" />
-                )}
               </div>
-            ))
-          )}
+            ) : rangeError ? (
+              <div className="text-center py-5 text-danger">
+                Error loading sales data
+              </div>
+            ) : bestSoldProducts.length === 0 ? (
+              <div className="text-center py-5 text-muted">No sales data</div>
+            ) : (
+              <div className="d-flex flex-column gap-3">
+                {bestSoldProducts.map((product, index) => (
+                  <div
+                    key={index}
+                    className="d-flex align-items-center justify-content-between p-3"
+                    style={{
+                      backgroundColor: "rgba(30, 67, 250, 0.03)",
+                      borderRadius: "8px",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(30, 67, 250, 0.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(30, 67, 250, 0.03)";
+                    }}
+                  >
+                    <div className="d-flex align-items-center">
+                      <div
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "8px",
+                          backgroundColor: COLORS[index % COLORS.length],
+                          color: "white",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: "12px",
+                          fontWeight: "bold",
+                          fontSize: "14px",
+                        }}
+                      >
+                        {index + 1}
+                      </div>
+                      <span style={{ color: "#1A1A1A" }}>{product.name}</span>
+                    </div>
+                    <span
+                      className="fw-semibold"
+                      style={{ color: COLORS[index % COLORS.length] }}
+                    >
+                      {product.quantity}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card.Body>
         </Card>
       </Col>
     </Row>

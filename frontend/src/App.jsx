@@ -15,11 +15,11 @@ const App = () => {
         style={{
           position: "relative",
           width: "100%",
-          background: "#0076f5",
+          background: "#1E43FA",
           height: "80px",
         }}
       >
-        <h3 className="mx-4 text-white text-center">
+        <h3 className="mx-4 text-[#FAC446] text-center">
           የፍኖተ ጽድቅ ሰ/ት/ቤት የንዋየ ቅድሳት መሸጫ ሱቅ
         </h3>
 
@@ -33,7 +33,7 @@ const App = () => {
       <ToastContainer />
 
       {/* SIDEBAR + MAIN CONTENT */}
-      <div className="d-flex" style={{ minHeight: "calc(100vh - 80px)" }}>
+      <div className="d-flex " style={{ minHeight: "calc(100vh - 80px)" }}>
         <Sidebar />
 
         {/* Main Content */}
@@ -41,10 +41,10 @@ const App = () => {
           className="my-2"
           style={{
             flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start", // Align content to the top-left
-            justifyContent: "flex-start", // Align content to the top-left
+            // display: "flex",
+            // flexDirection: "column",
+            // alignItems: "flex-start",
+            // justifyContent: "flex-start",
           }}
         >
           <Outlet />

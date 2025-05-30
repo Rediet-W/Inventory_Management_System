@@ -1,27 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { Table, Form, Row, Col } from "react-bootstrap";
+import {
+  Table,
+  Form,
+  Row,
+  Col,
+  Spinner,
+  Card,
+  Badge,
+  Alert,
+} from "react-bootstrap";
 import { useGetAllPurchasesQuery } from "../slices/purchaseApiSlice";
 import { useGetAllTransfersQuery } from "../slices/transferApiSlice";
 import { useGetProductByBatchNumberQuery } from "../slices/productApiSlice";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const StockCardPage = () => {
-  // Fetch Purchases & Transfers
   const { data: purchases, isLoading: isLoadingPurchases } =
     useGetAllPurchasesQuery();
   const { data: transfers, isLoading: isLoadingTransfers } =
     useGetAllTransfersQuery();
-
   const [selectedBatch, setSelectedBatch] = useState("");
   const [stockMovements, setStockMovements] = useState([]);
   const [batchNumbers, setBatchNumbers] = useState([]);
-
-  // Fetch product details when batch number is selected
   const { data: product, isLoading: isLoadingProduct } =
     useGetProductByBatchNumberQuery(selectedBatch, {
-      skip: !selectedBatch, // Skip API call if batch is not selected
+      skip: !selectedBatch,
     });
 
-  // **Fetch Unique Batch Numbers**
   useEffect(() => {
     if (purchases && transfers) {
       const purchaseBatches = purchases.map((p) => p.batchNumber);
@@ -29,15 +35,12 @@ const StockCardPage = () => {
       const uniqueBatches = [
         ...new Set([...purchaseBatches, ...transferBatches]),
       ];
-
       setBatchNumbers(uniqueBatches);
     }
   }, [purchases, transfers]);
 
-  // **Update Stock Movements when Batch is Selected**
   useEffect(() => {
     if (selectedBatch && purchases && transfers) {
-      // Get all purchases & transfers for the selected batch
       const purchaseRecords = purchases
         .filter((p) => p.batchNumber === selectedBatch)
         .map((p) => ({
@@ -62,12 +65,10 @@ const StockCardPage = () => {
           outTotalCost: (Number(t.quantity) || 0) * (product?.averageCost || 0),
         }));
 
-      // Combine & Sort by Date
       const movements = [...purchaseRecords, ...transferRecords].sort(
         (a, b) => new Date(a.date) - new Date(b.date)
       );
 
-      // Compute Balance
       let balance = 0;
       const updatedMovements = movements.map((record) => {
         balance += record.inQty - record.outQty;
@@ -78,110 +79,136 @@ const StockCardPage = () => {
     }
   }, [selectedBatch, purchases, transfers, product]);
 
-  if (isLoadingPurchases || isLoadingTransfers || isLoadingProduct)
-    return <div>Loading...</div>;
+  if (isLoadingPurchases || isLoadingTransfers || isLoadingProduct) {
+    return (
+      <div className="d-flex justify-content-center mt-5">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="container mt-5">
-      <h3 className="text-center">Stock Card</h3>
+    <div className="container-fluid p-4">
+      <div className="card border-0 shadow-sm">
+        <div className="card-body">
+          <h3 className="card-title text-center mb-4">Stock Card</h3>
 
-      {/* Batch Number Dropdown */}
-      <Row className="mb-3">
-        <Col md={4}>
-          <Form.Group>
-            <Form.Label>Select Batch Number</Form.Label>
-            <Form.Select
-              value={selectedBatch}
-              onChange={(e) => setSelectedBatch(e.target.value)}
-            >
-              <option value="">Select Batch</option>
-              {batchNumbers.length > 0 ? (
-                batchNumbers.map((batch) => (
-                  <option key={batch} value={batch}>
-                    {batch}
-                  </option>
-                ))
-              ) : (
-                <option disabled>No batches available</option>
-              )}
-            </Form.Select>
-          </Form.Group>
-        </Col>
-        <Col md={4}>
-          <Form.Group>
-            <Form.Label>Product Name</Form.Label>
-            <Form.Control type="text" value={product?.name || ""} disabled />
-          </Form.Group>
-        </Col>
-        <Col md={4}>
-          <Form.Group>
-            <Form.Label>Unit of Measurement</Form.Label>
-            <Form.Control
-              type="text"
-              value={product?.unitOfMeasurement || ""}
-              disabled
-            />
-          </Form.Group>
-        </Col>
-      </Row>
+          <Row className="mb-4 g-3">
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>Batch Number</Form.Label>
+                <Form.Select
+                  value={selectedBatch}
+                  onChange={(e) => setSelectedBatch(e.target.value)}
+                  size="sm"
+                >
+                  <option value="">Select Batch</option>
+                  {batchNumbers.map((batch) => (
+                    <option key={batch} value={batch}>
+                      {batch}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>Product Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={product?.name || ""}
+                  disabled
+                  size="sm"
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>Unit of Measurement</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={product?.unitOfMeasurement || ""}
+                  disabled
+                  size="sm"
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-      {/* Stock Card Table with Grouped Headers */}
-      <Table striped bordered hover responsive className="table-sm mt-3">
-        <thead>
-          <tr>
-            <th rowSpan="2">Date</th>
-            <th rowSpan="2">Reference</th>
-            <th colSpan="3" className="text-center">
-              In
-            </th>
-            <th colSpan="2" className="text-center">
-              Out
-            </th>
-            <th rowSpan="2">Balance</th>
-          </tr>
-          <tr>
-            <th>Qty</th>
-            <th>Unit Cost</th>
-            <th>Total Cost</th>
-            <th>Qty</th>
-            <th>Total Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stockMovements.length > 0 ? (
-            stockMovements.map((movement, index) => (
-              <tr key={index}>
-                <td>{new Date(movement.date).toLocaleDateString()}</td>
-                <td>{movement.ref}</td>
-                <td>{movement.inQty || "-"}</td>
-                <td>
-                  {Number(movement.inUnitCost) > 0
-                    ? `${Number(movement.inUnitCost).toFixed(2)}`
-                    : "-"}
-                </td>
-                <td>
-                  {Number(movement.inTotalCost) > 0
-                    ? `${Number(movement.inTotalCost).toFixed(2)}`
-                    : "-"}
-                </td>
-                <td>{movement.outQty || "-"}</td>
-                <td>
-                  {Number(movement.outTotalCost) > 0
-                    ? `${Number(movement.outTotalCost).toFixed(2)}`
-                    : "-"}
-                </td>
-                <td>{movement.balance}</td>
-              </tr>
-            ))
+          {selectedBatch ? (
+            <div className="table-responsive">
+              <Table hover className="align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th rowSpan="2">Date</th>
+                    <th rowSpan="2">Reference</th>
+                    <th colSpan="3" className="text-center">
+                      In
+                    </th>
+                    <th colSpan="2" className="text-center">
+                      Out
+                    </th>
+                    <th rowSpan="2">Balance</th>
+                  </tr>
+                  <tr>
+                    <th>Qty</th>
+                    <th>Unit Cost</th>
+                    <th>Total Cost</th>
+                    <th>Qty</th>
+                    <th>Total Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stockMovements.length > 0 ? (
+                    stockMovements.map((movement, index) => (
+                      <tr key={index}>
+                        <td>{new Date(movement.date).toLocaleDateString()}</td>
+                        <td>{movement.ref}</td>
+                        <td>{movement.inQty || "-"}</td>
+                        <td>
+                          {movement.inUnitCost > 0
+                            ? movement.inUnitCost.toFixed(2)
+                            : "-"}
+                        </td>
+                        <td>
+                          {movement.inTotalCost > 0
+                            ? movement.inTotalCost.toFixed(2)
+                            : "-"}
+                        </td>
+                        <td>{movement.outQty || "-"}</td>
+                        <td>
+                          {movement.outTotalCost > 0
+                            ? movement.outTotalCost.toFixed(2)
+                            : "-"}
+                        </td>
+                        <td
+                          className={
+                            movement.balance <= (product?.reorderLevel || 0)
+                              ? "text-danger fw-bold"
+                              : ""
+                          }
+                        >
+                          {movement.balance}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="text-center py-4 text-muted">
+                        No stock movement found for selected batch
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
+            </div>
           ) : (
-            <tr>
-              <td colSpan="8" className="text-center">
-                No stock movement found.
-              </td>
-            </tr>
+            <Alert variant="info" className="text-center">
+              Please select a batch number to view stock movements
+            </Alert>
           )}
-        </tbody>
-      </Table>
+        </div>
+      </div>
     </div>
   );
 };

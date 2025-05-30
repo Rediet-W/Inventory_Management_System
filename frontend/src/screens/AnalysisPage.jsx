@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import moment from "moment";
+import { toast } from "react-toastify";
 
 const AnalysisPage = () => {
   const currentYear = moment().year();
@@ -88,100 +89,124 @@ const AnalysisPage = () => {
   }, [yearlySalesData]);
 
   return (
-    <Container className="mt-3">
-      <h2 className="text-center mb-4">Shop Sales Analysis</h2>
+    <Container className="mt-4">
+      <div className="bg-white p-4 rounded-3 shadow-sm">
+        <h2 className="text-center mb-4" style={{ color: "#1E43FA" }}>
+          Shop Sales Analysis
+        </h2>
 
-      <Row className="mb-4">
-        <Col md={6}>
-          <Form.Group>
-            <Form.Label>Select Year</Form.Label>
-            <Form.Control
-              as="select"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            >
-              {[...Array(5)].map((_, i) => (
-                <option key={i} value={currentYear - i}>
-                  {currentYear - i}
-                </option>
-              ))}
-            </Form.Control>
-          </Form.Group>
-        </Col>
-
-        <Col md={6}>
-          <Form.Group>
-            <Form.Label>Select Month</Form.Label>
-            <Form.Control
-              as="select"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-            >
-              {moment.months().map((month, i) => (
-                <option key={i} value={i + 1}>
-                  {month}
-                </option>
-              ))}
-            </Form.Control>
-          </Form.Group>
-        </Col>
-      </Row>
-
-      {isLoading && (
-        <div className="text-center">
-          <Spinner animation="border" />
-          <p>Loading sales data...</p>
-        </div>
-      )}
-
-      {error && (
-        <Alert variant="danger" className="text-center">
-          Failed to load sales data: {error.message}
-        </Alert>
-      )}
-
-      {!isLoading && !error && processedMonthlySales.topProducts.length > 0 && (
-        <Row className="mt-4">
+        <Row className="mb-4 g-3">
           <Col md={6}>
-            <h5 className="text-center">
-              Top Sold Items (
-              {moment()
-                .month(selectedMonth - 1)
-                .format("MMMM")}
-              )
-            </h5>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={processedMonthlySales.topProducts}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="total_sold" fill="#007bff" />
-              </BarChart>
-            </ResponsiveContainer>
+            <Form.Group>
+              <Form.Label className="fw-medium">Select Year</Form.Label>
+              <Form.Control
+                as="select"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="form-select"
+              >
+                {[...Array(5)].map((_, i) => (
+                  <option key={i} value={currentYear - i}>
+                    {currentYear - i}
+                  </option>
+                ))}
+              </Form.Control>
+            </Form.Group>
           </Col>
-        </Row>
-      )}
 
-      {/* Yearly Sales Summary */}
-      {!isLoading && !error && (
-        <Row className="mt-4">
-          <Col>
-            <h5 className="text-center">
-              Yearly Sales Summary of ({selectedYear})
-            </h5>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={processedYearlySales}>
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="total_sold" fill="#28a745" />
-              </BarChart>
-            </ResponsiveContainer>
+          <Col md={6}>
+            <Form.Group>
+              <Form.Label className="fw-medium">Select Month</Form.Label>
+              <Form.Control
+                as="select"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                className="form-select"
+              >
+                {moment.months().map((month, i) => (
+                  <option key={i} value={i + 1}>
+                    {month}
+                  </option>
+                ))}
+              </Form.Control>
+            </Form.Group>
           </Col>
         </Row>
-      )}
+
+        {isLoading && (
+          <div className="text-center py-4">
+            <Spinner animation="border" variant="primary" />
+            <p className="mt-2">Loading sales data...</p>
+          </div>
+        )}
+
+        {error && (
+          <Alert variant="danger" className="text-center">
+            Failed to load sales data: {error.message}
+          </Alert>
+        )}
+
+        {!isLoading &&
+          !error &&
+          processedMonthlySales.topProducts.length > 0 && (
+            <Row className="mt-4">
+              <Col md={6}>
+                <div className="bg-white p-3 rounded-3 shadow-sm mb-4">
+                  <h5 className="text-center mb-3">
+                    Top Sold Items (
+                    {moment()
+                      .month(selectedMonth - 1)
+                      .format("MMMM")}
+                    )
+                  </h5>
+                  <div style={{ height: "300px" }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={processedMonthlySales.topProducts}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar
+                          dataKey="total_sold"
+                          fill="#1E43FA"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          )}
+
+        {/* Yearly Sales Summary */}
+        {!isLoading && !error && (
+          <Row className="mt-4">
+            <Col>
+              <div className="bg-white p-3 rounded-3 shadow-sm">
+                <h5 className="text-center mb-3">
+                  Yearly Sales Summary of ({selectedYear})
+                </h5>
+                <div style={{ height: "300px" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={processedYearlySales}>
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar
+                        dataKey="total_sold"
+                        fill="#28a745"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        )}
+      </div>
     </Container>
   );
 };

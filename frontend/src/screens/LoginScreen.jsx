@@ -6,19 +6,16 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLoginMutation } from "../slices/userApiSlice";
 import { setCredentials } from "../slices/authSlice";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Loader from "../components/Loader";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const [login, { isLoading }] = useLoginMutation();
-
   const { userInfo } = useSelector((state) => state.auth);
-  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (userInfo) {
@@ -30,73 +27,71 @@ const LoginScreen = () => {
     e.preventDefault();
     try {
       const res = await login({ email, password }).unwrap();
-      console.log("✅ Login Response:", res);
 
       if (!res.token) {
-        console.error("❌ No token received in response:", res);
-        setErrorMessage(err?.data?.message || err.error);
         toast.error("Login failed. No token received.");
         return;
       }
 
       dispatch(setCredentials({ success: true, data: res }));
-      console.log("🚀 Dispatched setCredentials:", res);
-
+      toast.success("Login successful");
       navigate("/");
     } catch (err) {
-      console.error("❌ Login Failed:", err?.data?.message || err.error);
-      toast.error(err?.data?.message || err.error);
+      toast.error(err?.data?.message || err.error || "Login failed");
     }
   };
 
   return (
-    <FormContainer>
-      <h1>Welcome Back!</h1>
-      {errorMessage && (
-        <div className="alert alert-danger" role="alert">
-          {errorMessage}
+    <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+      <FormContainer className="p-4 shadow-sm rounded-3 bg-white">
+        <div className="text-center mb-4">
+          <h1 className="fw-bold">Welcome Back!</h1>
+          <p className="text-muted">Please sign in to continue</p>
         </div>
-      )}
 
-      <Form onSubmit={submitHandler}>
-        <Form.Group className="my-2" controlId="email">
-          <Form.Label>Email Address</Form.Label>
-          <Form.Control
-            type="email"
-            placeholder="Enter email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          ></Form.Control>
-        </Form.Group>
+        <Form onSubmit={submitHandler} className="mb-4">
+          <Form.Group className="mb-3">
+            <Form.Label>Email Address</Form.Label>
+            <Form.Control
+              type="email"
+              placeholder="Enter email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </Form.Group>
 
-        <Form.Group className="my-2" controlId="password">
-          <Form.Label>Password</Form.Label>
-          <Form.Control
-            type="password"
-            placeholder="Enter password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          ></Form.Control>
-        </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Password</Form.Label>
+            <Form.Control
+              type="password"
+              placeholder="Enter password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </Form.Group>
 
-        <Button
-          disabled={isLoading}
-          type="submit"
-          variant="primary"
-          className="mt-3"
-        >
-          Login
-        </Button>
-      </Form>
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-100 mt-3 py- h-10"
+            disabled={isLoading}
+          >
+            {isLoading ? <Loader size="xs" /> : "Login"}
+          </Button>
+        </Form>
 
-      {isLoading && <Loader />}
-
-      <Row className="py-3">
-        <Col>
-          Don't have an account? <Link to="/register">Register</Link>
-        </Col>
-      </Row>
-    </FormContainer>
+        <Row className="text-center">
+          <Col>
+            Don't have an account?{" "}
+            <Link to="/register" className="text-primary fw-semibold">
+              Register
+            </Link>
+          </Col>
+        </Row>
+      </FormContainer>
+    </div>
   );
 };
 

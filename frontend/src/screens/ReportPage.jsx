@@ -1,24 +1,35 @@
 import React, { useState, useMemo, useRef } from "react";
-import { Form, Button, Card, Row, Col, Table, Alert } from "react-bootstrap";
+import {
+  Form,
+  Button,
+  Card,
+  Row,
+  Col,
+  Table,
+  Alert,
+  Spinner,
+} from "react-bootstrap";
 import { useGetSalesByDateRangeQuery } from "../slices/salesApiSlice";
 import { useGetPurchasesByDateRangeQuery } from "../slices/purchaseApiSlice";
 import { FaPrint } from "react-icons/fa";
 import { useReactToPrint } from "react-to-print";
+import { toast } from "react-toastify";
 
 const ReportPage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [applyFilters, setApplyFilters] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data: sales } = useGetSalesByDateRangeQuery(
+  const { data: sales, isLoading: salesLoading } = useGetSalesByDateRangeQuery(
     { startDate, endDate },
     { skip: !applyFilters }
   );
-  const { data: purchases } = useGetPurchasesByDateRangeQuery(
-    { startDate, endDate },
-    { skip: !applyFilters }
-  );
+  const { data: purchases, isLoading: purchasesLoading } =
+    useGetPurchasesByDateRangeQuery(
+      { startDate, endDate },
+      { skip: !applyFilters }
+    );
 
   const reportData = useMemo(() => {
     const reportRows = [];
@@ -48,114 +59,146 @@ const ReportPage = () => {
 
   const reportRef = useRef();
   const handlePrint = useReactToPrint({
-    content: () => {
-      console.log("📄 reportRef:", reportRef.current);
-      return reportRef.current || console.error("❌ reportRef is null.");
-    },
+    content: () => reportRef.current,
     documentTitle: `Financial_Report_${startDate}_to_${endDate}`,
-    onAfterPrint: () => console.log("✅ Printing completed!"),
+    onAfterPrint: () => toast.success("Report printed successfully!"),
   });
 
   const handleSafePrint = () => {
     if (!reportRef.current) {
-      console.error("❌ reportRef is null. Printing aborted.");
+      toast.error("Report content not available");
       return;
     }
-    console.log("📄 reportRef:", reportRef.current);
     if (reportData.length === 0) {
-      alert("No data available to print!");
+      toast.warning("No data available to print!");
       return;
     }
     handlePrint();
   };
 
+  const handleApplyFilters = () => {
+    if (!startDate || !endDate) {
+      toast.error("Please select both start and end dates");
+      return;
+    }
+    if (new Date(startDate) > new Date(endDate)) {
+      toast.error("Start date cannot be after end date");
+      return;
+    }
+    setApplyFilters(true);
+  };
+
   return (
     <div className="container mt-4">
-      <h1 className="text-center mb-4 fw-bold">Financial Report</h1>
+      <div className="bg-white p-4 rounded-3 shadow-sm">
+        <h1 className="text-center mb-4" style={{ color: "#1E43FA" }}>
+          Financial Report
+        </h1>
 
-      <Card className="p-4 mb-4 shadow-sm">
-        <Form>
-          <Row className="align-items-center">
-            <Col md={4}>
-              <Form.Group controlId="startDate">
-                <Form.Label>Start Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group controlId="endDate">
-                <Form.Label>End Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={4} className="text-end">
-              <Button
-                variant="primary"
-                className="mt-3"
-                onClick={() => setApplyFilters(true)}
-              >
-                Apply Filters
-              </Button>
-            </Col>
-          </Row>
-        </Form>
-      </Card>
+        <Card className="p-4 mb-4 shadow-sm border-0">
+          <Form>
+            <Row className="align-items-center">
+              <Col md={4}>
+                <Form.Group controlId="startDate">
+                  <Form.Label className="fw-medium">Start Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="form-control"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group controlId="endDate">
+                  <Form.Label className="fw-medium">End Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="form-control"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4} className="text-end">
+                <Button
+                  variant="primary"
+                  className="mt-3"
+                  onClick={handleApplyFilters}
+                  disabled={salesLoading || purchasesLoading}
+                >
+                  {salesLoading || purchasesLoading ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      Loading...
+                    </>
+                  ) : (
+                    "Apply Filters"
+                  )}
+                </Button>
+              </Col>
+            </Row>
+          </Form>
+        </Card>
 
-      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+        <Row className="justify-content-end mb-3">
+          <Col md={3} className="text-end mb-3">
+            <Button
+              variant="success"
+              onClick={handleSafePrint}
+              disabled={reportData.length === 0}
+            >
+              <FaPrint className="me-2" /> Print Report
+            </Button>
+          </Col>
+        </Row>
 
-      <Row className="justify-content-end mb-3">
-        <Col md={3} className="text-end mb-3">
-          <Button variant="success" onClick={handleSafePrint}>
-            <FaPrint /> Print Report
-          </Button>
-        </Col>
-      </Row>
-
-      <div ref={reportRef} className="print-section">
-        <h3 className="text-center">Financial Report</h3>
-        <p className="text-center">
-          {startDate && endDate
-            ? `${startDate} - ${endDate}`
-            : "No date selected"}
-        </p>
-        <Table striped bordered hover>
-          <thead className="table-dark">
-            <tr>
-              <th>Date</th>
-              <th>Product Name</th>
-              <th>Amount (ETB)</th>
-              <th>DR/CR</th>
-              <th>User</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reportData.length > 0 ? (
-              reportData.map((row, index) => (
-                <tr key={index}>
-                  <td>{row.date}</td>
-                  <td>{row.productName}</td>
-                  <td>{row.amount}</td>
-                  <td>{row.type}</td>
-                  <td>{row.user}</td>
+        <div ref={reportRef} className="print-section">
+          <h3 className="text-center">Financial Report</h3>
+          <p className="text-center">
+            {startDate && endDate
+              ? `${startDate} - ${endDate}`
+              : "No date selected"}
+          </p>
+          <div className="table-responsive">
+            <Table striped bordered hover>
+              <thead className="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Product Name</th>
+                  <th>Amount (ETB)</th>
+                  <th>DR/CR</th>
+                  <th>User</th>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" className="text-center">
-                  No data available
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
+              </thead>
+              <tbody>
+                {reportData.length > 0 ? (
+                  reportData.map((row, index) => (
+                    <tr key={index}>
+                      <td>{row.date}</td>
+                      <td>{row.productName}</td>
+                      <td>{row.amount.toFixed(2)}</td>
+                      <td>{row.type}</td>
+                      <td>{row.user}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center text-muted">
+                      {applyFilters
+                        ? "No data available for selected dates"
+                        : "Please select date range and apply filters"}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </div>
+        </div>
       </div>
     </div>
   );

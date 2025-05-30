@@ -1,3 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 /* Default sidebar width when collapsed */
 .sidebar {
   width: 80px;
@@ -107,4 +110,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.container {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  text-align: left !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }

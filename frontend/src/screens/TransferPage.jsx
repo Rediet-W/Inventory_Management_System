@@ -1,27 +1,38 @@
 import React, { useState, useEffect } from "react";
-import { Table, Button, Row, Col, Form, Alert, Modal } from "react-bootstrap";
+import {
+  Table,
+  Button,
+  Row,
+  Col,
+  Form,
+  Modal,
+  Spinner,
+  Badge,
+  Card,
+} from "react-bootstrap";
 import { useGetProductsQuery } from "../slices/productApiSlice";
 import { useCreateTransferMutation } from "../slices/transferApiSlice";
 import { triggerRefresh } from "../slices/refreshSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import TransferPDF from "../pdfs/TransferPdf";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const TransferPage = () => {
   const dispatch = useDispatch();
+  const { userInfo } = useSelector((state) => state.auth);
   const { data: products, isLoading, error } = useGetProductsQuery();
   const [createTransfer, { isLoading: isSubmitting }] =
     useCreateTransferMutation();
-  const [transfers, setTransfers] = useState([]); // Active transfers
-  const [completedTransfers, setCompletedTransfers] = useState([]); // Completed transfers for PDF
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [showDownloadModal, setShowDownloadModal] = useState(false); // Modal state
-  const [signature] = useState("Storekeeper Name"); // Signature added only in download
+
+  const [transfers, setTransfers] = useState([]);
+  const [completedTransfers, setCompletedTransfers] = useState([]);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [date] = useState(new Date().toISOString().split("T")[0]);
-  const { userInfo } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (products && products.length > 0) {
+    if (products?.length > 0) {
       setTransfers([
         {
           id: Date.now(),
@@ -31,7 +42,7 @@ const TransferPage = () => {
           sellingPrice: "",
           qty: 0,
           quantityToTransfer: "",
-          reorderLevel: "", // Editable field with default value
+          reorderLevel: "",
         },
       ]);
     }
@@ -48,12 +59,16 @@ const TransferPage = () => {
         sellingPrice: "",
         qty: 0,
         quantityToTransfer: "",
-        reorderLevel: "", // Editable field
+        reorderLevel: "",
       },
     ]);
   };
 
   const handleRemoveRow = (id) => {
+    if (transfers.length <= 1) {
+      toast.warning("At least one transfer row must remain");
+      return;
+    }
     setTransfers(transfers.filter((transfer) => transfer.id !== id));
   };
 
@@ -70,7 +85,7 @@ const TransferPage = () => {
               sellingPrice: product.sellingPrice,
               qty: product.quantity,
               quantityToTransfer: "",
-              reorderLevel: product.reorderLevel || "", // Default value but editable
+              reorderLevel: product.reorderLevel || "",
             }
           : transfer
       )
@@ -100,10 +115,9 @@ const TransferPage = () => {
       (t) => t.quantityToTransfer > t.qty || t.quantityToTransfer <= 0
     );
     if (invalidTransfers.length > 0) {
-      setErrorMessage(
-        "❌ Ensure transfer quantity is valid and less than available stock."
+      toast.error(
+        "Ensure transfer quantity is valid and less than available stock"
       );
-      setTimeout(() => setErrorMessage(null), 5000);
       return;
     }
 
@@ -117,153 +131,184 @@ const TransferPage = () => {
             sellingPrice: transfer.sellingPrice,
             quantity: Number(transfer.quantityToTransfer),
             reference: "Stock Transfer",
-            storeKeeper: userInfo.name, // Signature is not in UI, but in download
-            reorderLevel: Number(transfer.reorderLevel) || 0, // Editable Reorder Level
+            storeKeeper: userInfo.name,
+            reorderLevel: Number(transfer.reorderLevel) || 0,
           }).unwrap()
         )
       );
 
-      alert("✅ Transfers completed successfully!");
+      toast.success("Transfers completed successfully!");
       dispatch(triggerRefresh());
-      setCompletedTransfers(transfers); // Save the completed transfers for PDF
-      setTransfers([]); // Clear the active transfers
-      setErrorMessage(null);
-      setShowDownloadModal(true); // Show the download modal
+      setCompletedTransfers(transfers);
+      setTransfers([]);
+      setShowDownloadModal(true);
     } catch (error) {
-      setErrorMessage("❌ Failed to complete transfers.");
+      toast.error(error?.data?.message || "Failed to complete transfers");
     }
   };
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <Alert variant="danger">Error loading products</Alert>;
+  if (isLoading)
+    return (
+      <div className="d-flex justify-content-center mt-5">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+
+  if (error) {
+    toast.error("Error loading products");
+    return null;
+  }
 
   return (
-    <div className="container mt-5">
-      <h3 className="text-center">Product Transfer to Shop</h3>
-      <h4 className="text-center">Date: {date}</h4>
+    <div className="container-fluid p-4">
+      <div className="card border-0 shadow-sm">
+        <div className="card-body">
+          <h3 className="card-title text-center mb-2">
+            Product Transfer to Shop
+          </h3>
+          <h5 className="text-center text-muted mb-4">Date: {date}</h5>
 
-      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+          <Row className="mb-4">
+            <Col md={8}>
+              <Button variant="outline-primary" onClick={handleAddRow}>
+                + Add Transfer Row
+              </Button>
+            </Col>
+            <Col md={4} className="text-end">
+              <Button
+                variant="primary"
+                onClick={handleSubmit}
+                disabled={isSubmitting || transfers.length === 0}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Spinner as="span" animation="border" size="sm" />{" "}
+                    Processing...
+                  </>
+                ) : (
+                  "Complete Transfer"
+                )}
+              </Button>
+            </Col>
+          </Row>
 
-      <Row className="mb-3 mt-3">
-        <Col md={9}>
-          <Button variant="primary" onClick={handleAddRow}>
-            + Add Row
-          </Button>
-        </Col>
-        <Col md={3} className="text-end">
-          <Button
-            variant="success"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Processing..." : "Transfer"}
-          </Button>
-        </Col>
-      </Row>
+          <div className="table-responsive">
+            <Table hover className="align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Product</th>
+                  <th>Batch No.</th>
+                  <th>UOM</th>
+                  <th>Price</th>
+                  <th>In Stock</th>
+                  <th>To Transfer</th>
+                  <th>Reorder Level</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transfers.map((transfer, index) => (
+                  <tr key={transfer.id}>
+                    <td>{index + 1}</td>
+                    <td>
+                      <Form.Select
+                        value={transfer.product}
+                        onChange={(e) =>
+                          handleProductSelect(transfer.id, e.target.value)
+                        }
+                        size="sm"
+                      >
+                        <option value="">Select Product</option>
+                        {products.map((product) => (
+                          <option
+                            key={product.batchNumber}
+                            value={product.name}
+                          >
+                            {product.name}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </td>
+                    <td>{transfer.batchNumber}</td>
+                    <td>{transfer.unitOfMeasurement}</td>
+                    <td>{transfer.sellingPrice}</td>
+                    <td
+                      className={
+                        transfer.quantityToTransfer > transfer.qty
+                          ? "text-danger fw-bold"
+                          : ""
+                      }
+                    >
+                      {transfer.qty}
+                    </td>
+                    <td>
+                      <Form.Control
+                        type="number"
+                        size="sm"
+                        value={transfer.quantityToTransfer}
+                        onChange={(e) =>
+                          handleQuantityChange(transfer.id, e.target.value)
+                        }
+                        min="1"
+                        max={transfer.qty}
+                      />
+                    </td>
+                    <td>
+                      <Form.Control
+                        type="number"
+                        size="sm"
+                        value={transfer.reorderLevel}
+                        onChange={(e) =>
+                          handleReorderLevelChange(transfer.id, e.target.value)
+                        }
+                      />
+                    </td>
+                    <td>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleRemoveRow(transfer.id)}
+                        className="rounded-circle"
+                      >
+                        ×
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        </div>
+      </div>
 
-      <Table striped bordered hover responsive className="table-sm mt-3">
-        <thead>
-          <tr>
-            <th>No.</th>
-            <th>Product</th>
-            <th>Batch No.</th>
-            <th>UOM</th>
-            <th>Selling Price</th>
-            <th>Qty in Store</th>
-            <th>Qty to Transfer</th>
-            <th>Reorder Level</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transfers.map((transfer, index) => (
-            <tr key={transfer.id}>
-              <td>{index + 1}</td>
-              <td>
-                <Form.Select
-                  value={transfer.product}
-                  onChange={(e) =>
-                    handleProductSelect(transfer.id, e.target.value)
-                  }
-                  style={{ fontSize: "0.9rem" }}
-                >
-                  <option value="">Select Product</option>
-                  {products.map((product) => (
-                    <option key={product.batchNumber} value={product.name}>
-                      {product.name}
-                    </option>
-                  ))}
-                </Form.Select>
-              </td>
-              <td>{transfer.batchNumber}</td>
-              <td>{transfer.unitOfMeasurement}</td>
-              <td>{transfer.sellingPrice}</td>
-              <td>{transfer.qty}</td>
-              <td>
-                <Form.Control
-                  type="number"
-                  value={transfer.quantityToTransfer}
-                  onChange={(e) =>
-                    handleQuantityChange(transfer.id, e.target.value)
-                  }
-                  min="1"
-                  max={transfer.qty}
-                />
-              </td>
-              <td>
-                <Form.Control
-                  type="number"
-                  value={transfer.reorderLevel}
-                  onChange={(e) =>
-                    handleReorderLevelChange(transfer.id, e.target.value)
-                  }
-                />
-              </td>
-              <td>
-                <Button
-                  className="bg-transparent"
-                  size="sm"
-                  onClick={() => handleRemoveRow(transfer.id)}
-                >
-                  ❌
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-
-      {/* Download Confirmation Modal */}
       <Modal
         show={showDownloadModal}
         onHide={() => setShowDownloadModal(false)}
+        centered
       >
         <Modal.Header closeButton>
           <Modal.Title>Download Transfer Report</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Do you want to download the transfer report as a PDF?
+          Would you like to download the transfer report as a PDF?
         </Modal.Body>
         <Modal.Footer>
           <Button
             variant="secondary"
             onClick={() => setShowDownloadModal(false)}
           >
-            No, Thanks
+            Cancel
           </Button>
           <PDFDownloadLink
             document={
               <TransferPDF transfers={completedTransfers} date={date} />
             }
-            fileName="Transfers.pdf"
+            fileName={`Transfer_Report_${date}.pdf`}
           >
             {({ loading }) => (
-              <Button
-                variant="primary"
-                disabled={loading}
-                onClick={() => setShowDownloadModal(false)}
-              >
-                {loading ? "Generating PDF..." : "Yes, Download"}
+              <Button variant="primary" disabled={loading}>
+                {loading ? "Generating..." : "Download PDF"}
               </Button>
             )}
           </PDFDownloadLink>

@@ -4,9 +4,9 @@ import {
   useDeleteUserMutation,
 } from "../slices/userApiSlice";
 import { useSelector } from "react-redux";
-import Loader from "../components/Loader";
+import { Table, Button, Spinner, Alert } from "react-bootstrap";
 import { FaTrashAlt } from "react-icons/fa";
-import { Alert } from "react-bootstrap";
+import { toast } from "react-toastify";
 
 const EmployeesPage = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -14,30 +14,35 @@ const EmployeesPage = () => {
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const [errorMessage, setErrorMessage] = useState(null);
   const [deletingUserId, setDeletingUserId] = useState(null);
+
   const handleDelete = async (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         setDeletingUserId(userId);
         const response = await deleteUser(userId).unwrap();
 
-        console.log("Delete Response:", response); // Debugging
-
-        // ✅ Only set an error message if `success` is explicitly `false`
         if (response?.success) {
-          refetch(); // Refresh users list after deletion
+          toast.success("User deleted successfully");
+          refetch();
         } else {
-          setErrorMessage(response?.message || "Failed to delete user");
+          toast.error(response?.message || "Failed to delete user");
         }
       } catch (err) {
         console.error("Error deleting user:", err);
-        setErrorMessage(err.data?.message || "Error deleting user");
+        toast.error(err.data?.message || "Error deleting user");
       } finally {
         setDeletingUserId(null);
       }
     }
   };
 
-  if (isLoading) return <Loader />;
+  if (isLoading)
+    return (
+      <div className="text-center py-4">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+
   if (isError)
     return (
       <Alert variant="danger" className="text-center">
@@ -47,49 +52,72 @@ const EmployeesPage = () => {
 
   return (
     <div className="container mt-4">
-      <h2 className="text-center mb-4">Employees Management</h2>
+      <div className="bg-white p-4 rounded-3 shadow-sm">
+        <h2 className="text-center mb-4" style={{ color: "#1E43FA" }}>
+          Users Management
+        </h2>
 
-      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+        {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
-      <table className="table table-striped table-hover table-bordered shadow-sm">
-        <thead className="">
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            {userInfo?.isPrimaryAdmin && <th>Actions</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {data?.length > 0 ? (
-            data.map((user) => (
-              <tr key={user.id}>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>{user.role}</td>
-                {userInfo?.isPrimaryAdmin && (
-                  <td>
-                    <button
-                      onClick={() => handleDelete(user.id)}
-                      className="btn btn-danger btn-sm"
-                      disabled={deletingUserId === user.id}
-                    >
-                      <FaTrashAlt className="me-2" />{" "}
-                      {deletingUserId === user.id ? "Deleting..." : "Delete"}
-                    </button>
-                  </td>
-                )}
+        <div className="table-responsive">
+          <Table striped bordered hover>
+            <thead className="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                {userInfo?.isPrimaryAdmin && <th>Actions</th>}
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="4" className="text-center text-warning">
-                No employees found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {data?.length > 0 ? (
+                data.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>{user.role}</td>
+                    {userInfo?.isPrimaryAdmin && (
+                      <td>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDelete(user.id)}
+                          disabled={deletingUserId === user.id}
+                          className="d-flex align-items-center"
+                        >
+                          {deletingUserId === user.id ? (
+                            <>
+                              <span
+                                className="spinner-border spinner-border-sm me-2"
+                                role="status"
+                                aria-hidden="true"
+                              ></span>
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <FaTrashAlt className="me-2" /> Delete
+                            </>
+                          )}
+                        </Button>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={userInfo?.isPrimaryAdmin ? 4 : 3}
+                    className="text-center text-muted"
+                  >
+                    No employees found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        </div>
+      </div>
     </div>
   );
 };

@@ -145,7 +145,10 @@ const SummaryPage = () => {
                 fileName="sales_report.pdf"
               >
                 {({ loading }) => (
-                  <button className="btn btn-success" disabled={loading}>
+                  <button
+                    className="btn btn-success d-flex gap-2 items-center"
+                    disabled={loading}
+                  >
                     <FaDownload />{" "}
                     {loading ? "Generating PDF..." : "Export as PDF"}
                   </button>
@@ -203,9 +206,14 @@ const SummaryPage = () => {
                 fileName="purchases_report.pdf"
               >
                 {({ loading }) => (
-                  <button className="btn btn-success" disabled={loading}>
+                  <button
+                    className="btn btn-success d-flex gap-2 items-center"
+                    disabled={loading}
+                  >
                     <FaDownload />{" "}
-                    {loading ? "Generating PDF..." : "Export as PDF"}
+                    <span>
+                      {loading ? "Generating PDF..." : "Export as PDF"}
+                    </span>
                   </button>
                 )}
               </PDFDownloadLink>
