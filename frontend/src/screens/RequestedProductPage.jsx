@@ -8,9 +8,9 @@ import {
   Row,
   Col,
   Spinner,
-  Alert,
   Pagination,
   InputGroup,
+  Badge,
 } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -20,14 +20,20 @@ import {
   useUpdateRequestedProductMutation,
 } from "../slices/requestedProductApiSlice";
 import { triggerRefresh } from "../slices/refreshSlice";
-import { FaPlus, FaSearch } from "react-icons/fa";
+import {
+  FaPlus,
+  FaSearch,
+  FaTrash,
+  FaEdit,
+  FaCheck,
+  FaTimes,
+} from "react-icons/fa";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const RequestedProductsPage = () => {
   const dispatch = useDispatch();
-  const refreshKey = useSelector((state) => state.refresh.refreshKey);
   const { userInfo } = useSelector((state) => state.auth);
-
-  // Fetch requested products, re-fetch on refreshKey change
   const {
     data: requestedProducts,
     isLoading,
@@ -39,72 +45,88 @@ const RequestedProductsPage = () => {
   const [deleteRequestedProduct] = useDeleteRequestedProductMutation();
   const [updateRequestedProduct] = useUpdateRequestedProductMutation();
 
-  // Modal state and pagination state
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [status, setStatus] = useState("pending"); // Status field
-  const [errorMessage, setErrorMessage] = useState("");
+  const [status, setStatus] = useState("pending");
   const [selectedProducts, setSelectedProducts] = useState([]);
-  const [inputStatuses, setInputStatuses] = useState({}); // Store status edits
-  const [editableQuantities, setEditableQuantities] = useState({});
-
+  const [inputStatuses, setInputStatuses] = useState({});
+  const [editingQuantity, setEditingQuantity] = useState(null);
+  const [tempQuantity, setTempQuantity] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 10;
   const [searchQuery, setSearchQuery] = useState("");
+  const productsPerPage = 10;
+
   useEffect(() => {
-    refetch();
-  }, [refreshKey, refetch]);
-
-  const handleShowModal = () => {
-    setErrorMessage("");
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setName("");
-    setDescription("");
-    setQuantity(1);
-    setStatus("pending");
-  };
+    if (error) {
+      toast.error("Error loading requested products");
+    }
+  }, [error]);
 
   const handleAddProduct = async () => {
-    setErrorMessage("");
     try {
-      const response = await createRequestedProduct({
+      await createRequestedProduct({
         name,
         description,
         quantity,
         status,
       }).unwrap();
-
-      console.log("✅ Product Created:", response);
+      toast.success("Product requested successfully");
       handleCloseModal();
       dispatch(triggerRefresh());
     } catch (err) {
-      console.error("❌ Failed to add product:", err);
-      setErrorMessage(err?.data?.message || "Error adding product");
+      toast.error(err?.data?.message || "Error adding product");
     }
   };
 
   const handleDelete = async () => {
-    if (
-      window.confirm("Are you sure you want to delete the selected products?")
-    ) {
-      try {
+    try {
+      const result = await new Promise((resolve) => {
+        toast.info(
+          <div>
+            <p>
+              Are you sure you want to delete {selectedProducts.length}{" "}
+              product(s)?
+            </p>
+            <div className="d-flex justify-content-end gap-2 mt-2">
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => {
+                  toast.dismiss();
+                  resolve(false);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-sm btn-danger"
+                onClick={() => {
+                  toast.dismiss();
+                  resolve(true);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>,
+          {
+            autoClose: false,
+            closeButton: false,
+          }
+        );
+      });
+
+      if (result) {
         for (const productId of selectedProducts) {
           await deleteRequestedProduct(productId).unwrap();
         }
         setSelectedProducts([]);
         dispatch(triggerRefresh());
-      } catch (err) {
-        console.error("❌ Failed to delete products:", err);
-        setErrorMessage(
-          err?.data?.message || "Error deleting requested product(s)"
-        );
+        toast.success("Products deleted successfully");
       }
+    } catch (err) {
+      toast.error("Error deleting requested product(s)");
     }
   };
 
@@ -117,9 +139,9 @@ const RequestedProductsPage = () => {
         status: newStatus,
       }).unwrap();
       dispatch(triggerRefresh());
+      toast.success("Status updated successfully");
     } catch (err) {
-      console.error("❌ Failed to update status:", err);
-      setErrorMessage(err?.data?.message || "Error updating status.");
+      toast.error(err?.data?.message || "Error updating status");
     }
   };
 
@@ -130,6 +152,37 @@ const RequestedProductsPage = () => {
         : [...prev, productId]
     );
   };
+
+  const handleStartEdit = (productId, currentQuantity) => {
+    setEditingQuantity(productId);
+    setTempQuantity(currentQuantity);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingQuantity(null);
+    setTempQuantity("");
+  };
+
+  const handleSaveEdit = async (productId) => {
+    if (!tempQuantity || isNaN(tempQuantity) || tempQuantity <= 0) {
+      toast.error("Please enter a valid quantity");
+      return;
+    }
+
+    try {
+      await updateRequestedProduct({
+        id: productId,
+        quantity: Number(tempQuantity),
+      }).unwrap();
+      dispatch(triggerRefresh());
+      toast.success("Quantity updated successfully");
+      setEditingQuantity(null);
+      setTempQuantity("");
+    } catch (err) {
+      toast.error(err?.data?.message || "Error updating quantity");
+    }
+  };
+
   const filteredProducts = requestedProducts?.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -138,205 +191,231 @@ const RequestedProductsPage = () => {
     ?.slice()
     .sort((a, b) => b.quantity - a.quantity);
 
-  const indexOfLastProduct = currentPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = sortedRequestedProducts?.slice(
-    indexOfFirstProduct,
-    indexOfLastProduct
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage
   );
 
   const totalPages = Math.ceil(
     (sortedRequestedProducts?.length || 0) / productsPerPage
   );
 
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
-
-  const handleQuantityUpdate = async (productId) => {
-    const newQuantity = parseInt(editableQuantities[productId], 10);
-
-    const product = requestedProducts?.find((p) => p.id === productId);
-    if (
-      !product ||
-      isNaN(newQuantity) ||
-      newQuantity <= 0 ||
-      newQuantity === product.quantity
-    ) {
-      setEditableQuantities((prev) => ({
-        ...prev,
-        [productId]: undefined,
-      }));
-      return;
-    }
-
-    try {
-      await updateRequestedProduct({
-        id: productId,
-        quantity: newQuantity,
-      }).unwrap();
-      dispatch(triggerRefresh());
-    } catch (err) {
-      console.error("❌ Failed to update quantity:", err);
-      setErrorMessage(err?.data?.message || "Error updating quantity.");
-    } finally {
-      setEditableQuantities((prev) => ({
-        ...prev,
-        [productId]: undefined,
-      }));
-    }
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setName("");
+    setDescription("");
+    setQuantity(1);
+    setStatus("pending");
   };
 
   return (
-    <Container className="mt-5">
-      <Row className="align-items-center mb-4">
-        <Col>
-          <h2 className="text-center">Lost Sales</h2>
-        </Col>
-
-        {/* ✅ Show "Add Requested Product" Button for Users */}
-        {userInfo?.role !== "admin" && (
-          <Col className="text-end">
-            <Button variant="primary" onClick={handleShowModal}>
-              <FaPlus className="me-2" /> Add Requested Product
-            </Button>
-          </Col>
-        )}
-
-        {/* ✅ Show Delete Button for Admins */}
-        {userInfo?.role === "admin" && selectedProducts.length > 0 && (
-          <Col className="text-end">
-            <Button variant="danger" onClick={handleDelete}>
-              Delete Selected Products
-            </Button>
-          </Col>
-        )}
-      </Row>
-      <Row className="justify-content-end mb-3">
-        <Col md={4}>
-          <InputGroup>
-            <InputGroup.Text>
-              <FaSearch />
-            </InputGroup.Text>
-            <Form.Control
-              type="text"
-              placeholder="Search by product name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </InputGroup>
-        </Col>
-      </Row>
-      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-
-      {isLoading ? (
-        <div className="text-center">
-          <Spinner animation="border" variant="primary" />
-        </div>
-      ) : (
-        <Table striped bordered hover responsive className="table-sm shadow-sm">
-          <thead className="">
-            <tr>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Quantity</th>
-              <th>Status</th>
-              {userInfo?.role === "admin" && <th>Select</th>}
-            </tr>
-          </thead>
-
-          <tbody>
-            {currentProducts.map((product) => (
-              <tr key={product.id}>
-                <td>{product.name}</td>
-                <td>{product.description}</td>
-                <td
-                  onClick={() => {
-                    if (userInfo?.role !== "admin") {
-                      setEditableQuantities((prev) => ({
-                        ...prev,
-                        [product.id]: product.quantity,
-                      }));
-                    }
-                  }}
+    <Container fluid className="p-4">
+      <div className="card border-0 shadow-sm">
+        <div className="card-body">
+          <Row className="align-items-center mb-4">
+            <Col>
+              <h3 className="mb-0" style={{ color: "#1E43FA" }}>
+                Lost Sales
+              </h3>
+            </Col>
+            {userInfo?.role !== "admin" && (
+              <Col className="text-end">
+                <Button
+                  variant="primary"
+                  onClick={() => setShowModal(true)}
+                  className="d-inline-flex align-items-center"
                 >
-                  {userInfo?.role !== "admin" &&
-                  editableQuantities[product.id] !== undefined ? (
-                    <Form.Control
-                      type="number"
-                      min="1"
-                      value={editableQuantities[product.id]}
-                      onChange={(e) =>
-                        setEditableQuantities({
-                          ...editableQuantities,
-                          [product.id]: e.target.value,
-                        })
-                      }
-                      onBlur={() => handleQuantityUpdate(product.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleQuantityUpdate(product.id);
-                      }}
-                      autoFocus
-                    />
-                  ) : (
-                    product.quantity
-                  )}
-                </td>
+                  <FaPlus className="me-2" /> Add Request
+                </Button>
+              </Col>
+            )}
+            {userInfo?.role === "admin" && selectedProducts.length > 0 && (
+              <Col className="text-end">
+                <Button
+                  variant="danger"
+                  onClick={handleDelete}
+                  className="d-inline-flex align-items-center"
+                >
+                  <FaTrash className="me-2" /> Delete Selected
+                </Button>
+              </Col>
+            )}
+          </Row>
 
-                <td>
-                  {userInfo?.role === "admin" ? (
-                    <Form.Select
-                      value={inputStatuses[product.id] ?? product.status}
-                      onChange={(e) =>
-                        setInputStatuses({
-                          ...inputStatuses,
-                          [product.id]: e.target.value,
-                        })
-                      }
-                      onBlur={() => handleStatusChange(product.id)}
+          <Row className="justify-content-end mb-3">
+            <Col md={4}>
+              <InputGroup>
+                <InputGroup.Text>
+                  <FaSearch />
+                </InputGroup.Text>
+                <Form.Control
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </InputGroup>
+            </Col>
+          </Row>
+
+          {isLoading ? (
+            <div className="text-center my-5">
+              <Spinner animation="border" variant="primary" />
+            </div>
+          ) : (
+            <>
+              <div className="table-responsive">
+                <Table hover className="align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Product</th>
+                      <th>Description</th>
+                      <th>Qty</th>
+                      <th>Status</th>
+                      {userInfo?.role === "admin" && <th>Select</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentProducts?.map((product) => (
+                      <tr key={product.id}>
+                        <td>{product.name}</td>
+                        <td>{product.description}</td>
+                        <td>
+                          {editingQuantity === product.id ? (
+                            <div className="d-flex align-items-center gap-2">
+                              <Form.Control
+                                type="number"
+                                min="1"
+                                value={tempQuantity}
+                                onChange={(e) =>
+                                  setTempQuantity(e.target.value)
+                                }
+                                size="sm"
+                                style={{ width: "80px" }}
+                                autoFocus
+                              />
+                              <Button
+                                variant="success"
+                                size="sm"
+                                onClick={() => handleSaveEdit(product.id)}
+                                className="p-1"
+                              >
+                                <FaCheck />
+                              </Button>
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={handleCancelEdit}
+                                className="p-1"
+                              >
+                                <FaTimes />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="d-flex align-items-center gap-2">
+                              <span>{product.quantity}</span>
+                              {userInfo?.role !== "admin" && (
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleStartEdit(
+                                      product.id,
+                                      product.quantity
+                                    )
+                                  }
+                                  className="p-1"
+                                >
+                                  <FaEdit />
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {userInfo?.role === "admin" ? (
+                            <Form.Select
+                              value={
+                                inputStatuses[product.id] ?? product.status
+                              }
+                              onChange={(e) =>
+                                setInputStatuses({
+                                  ...inputStatuses,
+                                  [product.id]: e.target.value,
+                                })
+                              }
+                              onBlur={() => handleStatusChange(product.id)}
+                              size="sm"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="purchased">Purchased</option>
+                            </Form.Select>
+                          ) : (
+                            <Badge
+                              bg={
+                                product.status === "purchased"
+                                  ? "success"
+                                  : "warning"
+                              }
+                              className="text-capitalize"
+                            >
+                              {product.status}
+                            </Badge>
+                          )}
+                        </td>
+                        {userInfo?.role === "admin" && (
+                          <td>
+                            <Form.Check
+                              type="checkbox"
+                              checked={selectedProducts.includes(product.id)}
+                              onChange={() => handleSelectProduct(product.id)}
+                            />
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+
+              {totalPages > 1 && (
+                <Pagination className="justify-content-center mt-4">
+                  <Pagination.Prev
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={currentPage === 1}
+                  />
+                  {[...Array(totalPages).keys()].map((number) => (
+                    <Pagination.Item
+                      key={number + 1}
+                      active={number + 1 === currentPage}
+                      onClick={() => setCurrentPage(number + 1)}
                     >
-                      <option value="pending">Pending</option>
-                      <option value="purchased">Purchased</option>
-                    </Form.Select>
-                  ) : (
-                    product.status
-                  )}
-                </td>
-                {userInfo?.role === "admin" && (
-                  <td>
-                    <Form.Check
-                      type="checkbox"
-                      onChange={() => handleSelectProduct(product.id)}
-                    />
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      )}
+                      {number + 1}
+                    </Pagination.Item>
+                  ))}
+                  <Pagination.Next
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                  />
+                </Pagination>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
-      {/* Pagination */}
-      <Pagination className="justify-content-center mt-4">
-        {[...Array(totalPages).keys()].map((number) => (
-          <Pagination.Item
-            key={number + 1}
-            active={number + 1 === currentPage}
-            onClick={() => handlePageChange(number + 1)}
-          >
-            {number + 1}
-          </Pagination.Item>
-        ))}
-      </Pagination>
-
-      {/* ✅ Modal for adding a product */}
+      {/* Add Product Modal */}
       <Modal show={showModal} onHide={handleCloseModal} centered>
         <Modal.Header closeButton>
           <Modal.Title>Add Requested Product</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-
           <Form>
-            <Form.Group controlId="name">
+            <Form.Group className="mb-3">
               <Form.Label>Product Name</Form.Label>
               <Form.Control
                 type="text"
@@ -346,14 +425,22 @@ const RequestedProductsPage = () => {
                 required
               />
             </Form.Group>
-
-            <Form.Group controlId="description">
+            <Form.Group className="mb-3">
               <Form.Label>Description</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Enter description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Quantity</Form.Label>
+              <Form.Control
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
                 required
               />
             </Form.Group>
@@ -364,7 +451,7 @@ const RequestedProductsPage = () => {
             Cancel
           </Button>
           <Button variant="primary" onClick={handleAddProduct}>
-            Add
+            Submit Request
           </Button>
         </Modal.Footer>
       </Modal>

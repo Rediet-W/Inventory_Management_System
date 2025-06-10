@@ -9,7 +9,6 @@ export const useAuthStore = create(
         if (!user.token) {
           console.error("❌ Token is missing in userInfo:", user);
         } else {
-          console.log("✅ Storing user info with token:", user);
         }
         set({ userInfo: user });
       },

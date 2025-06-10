@@ -145,7 +145,10 @@ const SummaryPage = () => {
                 fileName="sales_report.pdf"
               >
                 {({ loading }) => (
-                  <button className="btn btn-success" disabled={loading}>
+                  <button
+                    className="btn btn-success d-flex gap-2 items-center"
+                    disabled={loading}
+                  >
                     <FaDownload />{" "}
                     {loading ? "Generating PDF..." : "Export as PDF"}
                   </button>
@@ -167,21 +170,39 @@ const SummaryPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {sales?.map((sale, index) => (
-                  <tr key={index}>
-                    <td>{sale?.createdAt?.split("T")[0] || "Unknown Date"}</td>
-                    <td>{sale.name || "Unknown Product"}</td>
-                    <td>{sale.quantity}</td>
-                    <td>{sale.unitSellingPrice} </td>
-                    <td>{sale.quantity * sale.unitSellingPrice} </td>
-                    <td>{sale.averageCost} </td>
-                    <td>{sale.quantity * sale.averageCost} </td>
-                  </tr>
-                ))}
+                {sales?.map((sale, index) => {
+                  const hasNegativeQty = sale.quantity < 0;
+                  return (
+                    <tr
+                      key={index}
+                      className={hasNegativeQty ? "table-warning" : ""}
+                    >
+                      <td>
+                        {sale?.createdAt?.split("T")[0] || "Unknown Date"}
+                      </td>
+                      <td>{sale.name || "Unknown Product"}</td>
+                      <td>{sale.quantity}</td>
+                      <td>
+                        {hasNegativeQty ? "Adjustment" : sale.unitSellingPrice}{" "}
+                      </td>
+                      <td>
+                        {hasNegativeQty
+                          ? "-"
+                          : sale.quantity * sale.unitSellingPrice}{" "}
+                      </td>
+                      <td>{hasNegativeQty ? "-" : sale.averageCost} </td>
+                      <td>
+                        {hasNegativeQty
+                          ? "-"
+                          : sale.quantity * sale.averageCost}{" "}
+                      </td>
+                    </tr>
+                  );
+                })}
                 <tr className="fw-bold">
                   <td colSpan="4">Total </td>
-                  <td colSpan="2">{totalSales} ETB</td>
-                  <td colSpan="1">{totalCost} ETB</td>
+                  <td colSpan="2">{totalSales.toFixed(2)} ETB</td>
+                  <td colSpan="1">{totalCost.toFixed(2)} ETB</td>
                 </tr>
               </tbody>
             </Table>
@@ -203,9 +224,14 @@ const SummaryPage = () => {
                 fileName="purchases_report.pdf"
               >
                 {({ loading }) => (
-                  <button className="btn btn-success" disabled={loading}>
+                  <button
+                    className="btn btn-success d-flex gap-2 items-center"
+                    disabled={loading}
+                  >
                     <FaDownload />{" "}
-                    {loading ? "Generating PDF..." : "Export as PDF"}
+                    <span>
+                      {loading ? "Generating PDF..." : "Export as PDF"}
+                    </span>
                   </button>
                 )}
               </PDFDownloadLink>
@@ -223,17 +249,29 @@ const SummaryPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {purchases?.data?.map((purchase, index) => (
-                  <tr key={index}>
-                    <td>
-                      {purchase?.createdAt?.split("T")[0] || "Unknown Date"}
-                    </td>
-                    <td>{purchase.name || "Unknown Product"}</td>
-                    <td>{purchase.quantity}</td>
-                    <td>{purchase.unitCost} </td>
-                    <td>{purchase.quantity * purchase.unitCost} </td>
-                  </tr>
-                ))}
+                {purchases?.data?.map((purchase, index) => {
+                  const hasNegativeQty = purchase.quantity < 0;
+                  return (
+                    <tr
+                      key={index}
+                      className={hasNegativeQty ? "table-warning" : ""}
+                    >
+                      <td>
+                        {purchase?.createdAt?.split("T")[0] || "Unknown Date"}
+                      </td>
+                      <td>{purchase.name || "Unknown Product"}</td>
+                      <td>{purchase.quantity}</td>
+                      <td>
+                        {hasNegativeQty ? "Adjustment" : purchase.unitCost}{" "}
+                      </td>
+                      <td>
+                        {hasNegativeQty
+                          ? "-"
+                          : purchase.quantity * purchase.unitCost}{" "}
+                      </td>
+                    </tr>
+                  );
+                })}
                 <tr className="fw-bold">
                   <td colSpan="4">Total</td>
                   <td>{totalPurchases} ETB</td>

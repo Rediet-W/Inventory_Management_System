@@ -47,7 +47,6 @@ export const createPurchase = asyncHandler(async (req, res) => {
 // @route   GET /api/purchases
 // @access  Private (Authenticated users)
 export const getAllPurchases = asyncHandler(async (req, res) => {
-  console.log(" no i called");
   try {
     const { startDate, endDate } = req.query;
     const errors = [];
@@ -108,7 +107,6 @@ export const getPurchaseByBatchNumber = asyncHandler(async (req, res) => {
 // @route   GET /api/purchases/:id
 // @access  Private (Authenticated users)
 export const getPurchaseById = asyncHandler(async (req, res) => {
-  console.log("hey so here");
   try {
     const purchaseId = req.params.id;
     if (!purchaseId) {
@@ -137,7 +135,6 @@ export const getPurchaseById = asyncHandler(async (req, res) => {
 // @route   DELETE /api/purchases/:id
 // @access  Private (Admin only)
 export const deletePurchase = asyncHandler(async (req, res) => {
-  console.log("i called");
   try {
     const purchaseId = req.params.id;
     if (!purchaseId) {
@@ -162,7 +159,6 @@ export const deletePurchase = asyncHandler(async (req, res) => {
   }
 });
 export const getPurchaseByDateRange = asyncHandler(async (req, res) => {
-  console.log("what was received", req.query);
   try {
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {

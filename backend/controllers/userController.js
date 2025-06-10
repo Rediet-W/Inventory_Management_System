@@ -33,7 +33,6 @@ export const authUser = asyncHandler(async (req, res) => {
     }
 
     const token = generateToken(user.id);
-    console.log("Generated Token:", token);
 
     sendResponse(res, true, "Login successful", {
       _id: user.id,

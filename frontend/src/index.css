@@ -1,3 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 /* Default sidebar width when collapsed */
 .sidebar {
   width: 80px;
@@ -89,7 +92,20 @@
   transition: width 0.3s ease-in-out;
   z-index: 1000;
 }
+.nav-link:focus {
+  background: #0b174b !important;
+}
 
+.nav-link:active {
+  background: #0b174b !important;
+}
+.nav-item:active {
+  background: #0b174b !important;
+}
+.nav-item:focus,
+.nav-item:active {
+  background: #1e43fa !important;
+}
 .collapsed-sidebar {
   width: 80px;
 }
@@ -107,4 +123,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.container {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  text-align: left !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }

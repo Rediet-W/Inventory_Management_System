@@ -12,6 +12,7 @@ import saleRoute from "./routes/saleRoutes.js";
 import purchaseRoute from "./routes/purchaseRoutes.js";
 import shopRoute from "./routes/shopRoutes.js";
 import transferRoute from "./routes/transferRoutes.js";
+import adjustmentRoute from "./routes/adjustmentRoutes.js";
 
 dotenv.config();
 
@@ -30,7 +31,7 @@ const startServer = async () => {
           const allowedOrigins = [
             "http://localhost:3000", // Local development
             "https://inventory-management-system.vercel.app", // Stable production URL
-            "https://inventory-management-system-beta.vercel.app"
+            "https://inventory-management-system-beta.vercel.app",
           ];
 
           if (!origin || allowedOrigins.includes(origin)) {
@@ -62,6 +63,7 @@ const startServer = async () => {
     app.use("/api/purchases", purchaseRoute);
     app.use("/api/shop", shopRoute);
     app.use("/api/transfers", transferRoute);
+    app.use("/api/adjustments", adjustmentRoute);
 
     // Serve frontend assets in production
     if (process.env.NODE_ENV === "production") {

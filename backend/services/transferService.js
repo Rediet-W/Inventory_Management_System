@@ -26,7 +26,6 @@ export const createTransfer = async (data) => {
     where: { batchNumber: data.batchNumber },
   });
 
-  console.log(product, "product");
   if (!product) {
     return { error: "Product not found in store" };
   }
@@ -48,7 +47,6 @@ export const createTransfer = async (data) => {
   const shopProduct = await Shop.findOne({
     where: { batchNumber: data.batchNumber },
   });
-  console.log(shopProduct, "shopProduct");
   if (shopProduct) {
     shopProduct.quantity += data.quantity;
     await shopProduct.save();

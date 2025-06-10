@@ -103,6 +103,11 @@ const Sidebar = () => {
       icon: <FaUserFriends />,
       links: [
         userInfo?.isPrimaryAdmin && {
+          to: "/adjustments",
+          label: "Adjustments",
+          icon: <FaExchangeAlt />,
+        },
+        userInfo?.isPrimaryAdmin && {
           to: "/management",
           label: "Management",
           icon: <FaUserFriends />,
@@ -129,18 +134,19 @@ const Sidebar = () => {
 
   return (
     <div
-      className={`sidebar-container min-h-screen max-h-fit ${
+      className={`sidebar-container min-h-screen ${
         isCollapsed ? "collapsed" : ""
       }`}
       style={{
         width: isCollapsed ? "80px" : "250px",
-        background: "#0076f5",
+        background: "linear-gradient(180deg, #1E43FA 0%, #0A2DB5 100%)",
         position: "sticky",
         top: 0,
         left: 0,
         transition: "width 0.3s ease",
         zIndex: 1000,
         minHeight: "fit-content",
+        boxShadow: "4px 0 10px rgba(0, 0, 0, 0.1)",
       }}
     >
       <button
@@ -148,76 +154,138 @@ const Sidebar = () => {
         onClick={() => setIsCollapsed(!isCollapsed)}
         style={{
           position: "absolute",
-          top: "10px",
+          top: "20px",
           right: isCollapsed ? "-40px" : "-20px",
-          background: "#60adff",
+          background: "#3A5BFF",
           color: "#fff",
           border: "none",
           borderRadius: "50%",
           width: "40px",
           height: "40px",
           zIndex: 1001,
+          boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          transition: "all 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#4D6BFF";
+          e.currentTarget.style.transform = "scale(1.05)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "#3A5BFF";
+          e.currentTarget.style.transform = "scale(1)";
         }}
       >
         {isCollapsed ? <FaAngleDoubleRight /> : <FaAngleDoubleLeft />}
       </button>
 
       {/* Sidebar Links */}
-      <ul className="nav flex-column" style={{ padding: "10px" }}>
+      <ul className="nav flex-column" style={{ padding: "20px 10px" }}>
         {/* Dashboard (Standalone Link) */}
-        <li className="nav-item">
+        <li className="nav-item" style={{ marginBottom: "8px" }}>
           <Link
             to="/"
             className={`nav-link d-flex align-items-center ${
-              location.pathname === "/dashboard"
-                ? "bg-white text-black"
-                : "text-light"
+              location.pathname === "/dashboard" ? "active" : ""
             }`}
             style={{
-              padding: "10px",
-              transition: "background 0.3s",
-              borderRadius: "4px",
-              background:
-                location.pathname === "/dashboard" ? "#0056b3" : "transparent",
+              padding: "12px 15px",
+              transition: "all 0.3s ease",
+              borderRadius: "8px",
+              color: "#FAC446",
+              textDecoration: "none",
+              // background:
+              //   location.pathname === "/dashboard"
+              //     ? "rgba(255, 255, 255, 0.1)"
+              //     : "transparent",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#0056b3")}
+            onMouseEnter={(e) =>
+              location.pathname !== "/dashboard" &&
+              (e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)")
+            }
             onMouseLeave={(e) =>
               (e.currentTarget.style.background =
-                location.pathname === "/dashboard" ? "#0056b3" : "transparent")
+                location.pathname === "/dashboard"
+                  ? "rgba(255, 255, 255, 0.15)"
+                  : "transparent")
             }
           >
-            <FaHome />
-            {!isCollapsed && <span className="ms-2">Dashboard</span>}
+            <div
+              style={{
+                width: "24px",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <FaHome />
+            </div>
+            {!isCollapsed && (
+              <span
+                style={{
+                  marginLeft: "12px",
+                  fontSize: "0.9rem",
+                  fontWeight: "500",
+                }}
+              >
+                Dashboard
+              </span>
+            )}
           </Link>
         </li>
 
         {/* Summary (Standalone Link for Superadmin) */}
         {userInfo?.role === "superadmin" && (
-          <li className="nav-item">
+          <li className="nav-item" style={{ marginBottom: "8px" }}>
             <Link
               to="/summary"
               className={`nav-link d-flex align-items-center ${
-                location.pathname === "/summary"
-                  ? "bg-white text-black"
-                  : "text-light"
+                location.pathname === "/summary" ? "active" : ""
               }`}
               style={{
-                padding: "10px",
-                transition: "background 0.3s",
-                borderRadius: "4px",
+                padding: "12px 15px",
+                transition: "all 0.3s ease",
+                borderRadius: "8px",
+                color: "#FAC446",
+                textDecoration: "none",
                 background:
-                  location.pathname === "/summary" ? "#0056b3" : "transparent",
+                  location.pathname === "/summary"
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "transparent",
               }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#0056b3")
+                location.pathname !== "/summary" &&
+                (e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)")
               }
               onMouseLeave={(e) =>
                 (e.currentTarget.style.background =
-                  location.pathname === "/summary" ? "#0056b3" : "transparent")
+                  location.pathname === "/summary"
+                    ? "rgba(255, 255, 255, 0.15)"
+                    : "transparent")
               }
             >
-              <FaClipboardList />
-              {!isCollapsed && <span className="ms-2">Summary</span>}
+              <div
+                style={{
+                  width: "24px",
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <FaClipboardList />
+              </div>
+              {!isCollapsed && (
+                <span
+                  style={{
+                    marginLeft: "12px",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                  }}
+                >
+                  Summary
+                </span>
+              )}
             </Link>
           </li>
         )}
@@ -225,63 +293,105 @@ const Sidebar = () => {
         {/* Grouped Sections (Shop, Store, Management) */}
         {userInfo?.role !== "superadmin" &&
           sidebarGroups.map((group) => (
-            <li className="nav-item" key={group.label}>
+            <li
+              className="nav-item"
+              key={group.label}
+              style={{ marginBottom: "8px" }}
+            >
               {/* Group Header */}
               <div
                 className="d-flex align-items-center justify-content-between"
                 style={{
-                  padding: "10px",
+                  padding: "12px 15px",
                   cursor: "pointer",
-                  color: "white",
-                  fontWeight: "bold",
+                  color: "#FAC446",
+                  fontWeight: "500",
+                  borderRadius: "8px",
+                  transition: "all 0.3s ease",
                 }}
                 onClick={() => toggleGroup(group.label)}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background =
+                    "rgba(255, 255, 255, 0.1)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
                 <div className="d-flex align-items-center">
-                  {group.icon}
-                  {!isCollapsed && <span className="ms-2">{group.label}</span>}
+                  <div
+                    style={{
+                      width: "24px",
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {group.icon}
+                  </div>
+                  {!isCollapsed && (
+                    <span style={{ marginLeft: "12px", fontSize: "0.9rem" }}>
+                      {group.label}
+                    </span>
+                  )}
                 </div>
                 {!isCollapsed &&
                   (openGroups[group.label] ? (
-                    <FaChevronUp />
+                    <FaChevronUp size={12} />
                   ) : (
-                    <FaChevronDown />
+                    <FaChevronDown size={12} />
                   ))}
               </div>
 
               {/* Group Links */}
               {!isCollapsed && openGroups[group.label] && (
-                <ul style={{ paddingLeft: "20px", listStyle: "none" }}>
+                <ul
+                  style={{
+                    paddingLeft: "36px",
+                    listStyle: "none",
+                    marginTop: "4px",
+                  }}
+                >
                   {group.links.map((link) => (
-                    <li key={link.to}>
+                    <li key={link.to} style={{ marginBottom: "4px" }}>
                       <Link
                         to={link.to}
                         className={`nav-link d-flex align-items-center ${
-                          location.pathname === link.to
-                            ? "bg-white text-black"
-                            : "text-light"
+                          location.pathname === link.to ? "active" : ""
                         }`}
                         style={{
-                          padding: "10px",
-                          transition: "background 0.3s",
-                          borderRadius: "4px",
+                          padding: "10px 15px",
+                          transition: "all 0.3s ease",
+                          borderRadius: "8px",
+                          color: "#FAC446",
+                          textDecoration: "none",
+                          fontSize: "0.85rem",
                           background:
                             location.pathname === link.to
-                              ? "#0056b3"
+                              ? "rgba(255, 255, 255, 0.15)"
                               : "transparent",
                         }}
                         onMouseEnter={(e) =>
-                          (e.currentTarget.style.background = "#0056b3")
+                          location.pathname !== link.to &&
+                          (e.currentTarget.style.background =
+                            "rgba(255, 255, 255, 0.1)")
                         }
                         onMouseLeave={(e) =>
                           (e.currentTarget.style.background =
                             location.pathname === link.to
-                              ? "#0056b3"
+                              ? "rgba(255, 255, 255, 0.15)"
                               : "transparent")
                         }
                       >
-                        {link.icon}
-                        <span className="ms-2">{link.label}</span>
+                        <div
+                          style={{
+                            width: "20px",
+                            display: "flex",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {link.icon}
+                        </div>
+                        <span style={{ marginLeft: "12px" }}>{link.label}</span>
                       </Link>
                     </li>
                   ))}

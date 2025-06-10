@@ -7,6 +7,7 @@ import {
   Row,
   Col,
   Form,
+  Spinner,
 } from "react-bootstrap";
 import {
   useGetProductsQuery,
@@ -15,6 +16,7 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { triggerRefresh } from "../slices/refreshSlice";
 import SearchBar from "../components/SearchBar";
+import { toast } from "react-toastify";
 
 const ManagementPage = () => {
   const dispatch = useDispatch();
@@ -34,8 +36,18 @@ const ManagementPage = () => {
     refetch();
   }, [refreshKey, refetch]);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <Alert variant="danger">Error loading products</Alert>;
+  if (isLoading)
+    return (
+      <div className="text-center py-4">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+  if (error)
+    return (
+      <Alert variant="danger" className="text-center">
+        Error loading products
+      </Alert>
+    );
 
   // **Search Logic**
   let filteredProducts = products || [];
@@ -118,7 +130,7 @@ const ManagementPage = () => {
   // **Save Updated Products**
   const handleSave = async () => {
     if (Object.keys(validationErrors).length > 0) {
-      setErrorMessage("❌ Cannot save: Fix validation errors first.");
+      toast.error("Cannot save: Fix validation errors first.");
       return;
     }
 
@@ -132,171 +144,221 @@ const ManagementPage = () => {
         updates.map((product) => updateProduct(product).unwrap())
       );
 
-      alert("✅ Products updated successfully!");
+      toast.success("Products updated successfully!");
       setEditedProducts({});
       setValidationErrors({});
       dispatch(triggerRefresh());
     } catch (error) {
-      console.error("❌ Failed to update products", error);
-      setErrorMessage("Failed to update products");
+      console.error("Failed to update products", error);
+      toast.error("Failed to update products");
     }
   };
 
   return (
-    <div className="container mt-5">
-      <h3 className="text-center ">Product Management</h3>
+    <div className="container mt-4">
+      <div className="bg-white p-4 rounded-3 shadow-sm">
+        <h3 className="text-center mb-4">Product Management</h3>
 
-      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+        {/* Search Bar and Save Button in One Row */}
+        <Row className="align-items-center mb-4 flex justify-between">
+          <Col md={6}>
+            <SearchBar
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              searchType={searchType}
+              setSearchType={setSearchType}
+            />
+          </Col>
+          <Col md={4} className="text-end">
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              disabled={isUpdating || Object.keys(validationErrors).length > 0}
+              style={{ backgroundColor: "#1E43FA", borderColor: "#1E43FA" }}
+            >
+              {isUpdating ? (
+                <>
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </Col>
+        </Row>
 
-      {/* Search Bar and Save Button in One Row */}
-      <Row className="align-items-center mb-3 mt-5">
-        <Col md={6}>
-          <SearchBar
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            searchType={searchType}
-            setSearchType={setSearchType}
-          />
-        </Col>
-        <Col md={4} className="text-end ">
-          <Button
-            variant="success"
-            onClick={handleSave}
-            disabled={isUpdating || Object.keys(validationErrors).length > 0}
-            className=""
-          >
-            {isUpdating ? "Saving..." : "Save"}
-          </Button>
-        </Col>
-      </Row>
-
-      {/* Product Table */}
-      <Table striped bordered hover responsive className="table-sm mt-3">
-        <thead>
-          <tr>
-            <th>No.</th>
-            <th>Batch No</th>
-            <th>Description</th>
-            <th>UOM</th>
-            <th>Quantity</th>
-            <th>Reorder Level</th>
-            <th>Average Cost</th>
-            <th>Selling Price</th>
-            <th>Remark</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentProducts.map((product, index) => {
-            const isSellingBelowAverage =
-              editedProducts[product.id]?.sellingPrice < product.averageCost;
-
-            return (
-              <tr key={product.id}>
-                <td>{indexOfFirstItem + index + 1}</td>
-                <td>
-                  <Form.Control
-                    type="text"
-                    value={
-                      editedProducts[product.id]?.batchNumber ??
-                      product.batchNumber
-                    }
-                    onChange={(e) =>
-                      handleChange(product.id, "batchNumber", e.target.value)
-                    }
-                  />
-                </td>
-                <td>
-                  <Form.Control
-                    type="text"
-                    value={editedProducts[product.id]?.name ?? product.name}
-                    onChange={(e) =>
-                      handleChange(product.id, "name", e.target.value)
-                    }
-                  />
-                </td>
-                <td>
-                  <Form.Control
-                    type="text"
-                    value={
-                      editedProducts[product.id]?.unitOfMeasurement ??
-                      product.unitOfMeasurement
-                    }
-                    onChange={(e) =>
-                      handleChange(
-                        product.id,
-                        "unitOfMeasurement",
-                        e.target.value
-                      )
-                    }
-                  />
-                </td>
-                <td>{product.quantity} </td>
-
-                <td>
-                  <Form.Control
-                    type="number"
-                    value={
-                      editedProducts[product.id]?.reorderLevel ??
-                      product.reorderLevel
-                    }
-                    onChange={(e) =>
-                      handleChange(product.id, "reorderLevel", e.target.value)
-                    }
-                    min="0"
-                  />
-                </td>
-                <td>{product.averageCost}</td>
-
-                <td>
-                  <Form.Control
-                    type="number"
-                    value={
-                      editedProducts[product.id]?.sellingPrice ??
-                      product.sellingPrice
-                    }
-                    onChange={(e) =>
-                      handleChange(product.id, "sellingPrice", e.target.value)
-                    }
-                    min="0"
-                  />
-                  {validationErrors[product.id] && (
-                    <small className="text-danger">
-                      {validationErrors[product.id]}
-                    </small>
-                  )}
-                </td>
-                <td>
-                  <Form.Control
-                    type="text"
-                    value={
-                      editedProducts[product.id]?.remark ?? product.remark ?? ""
-                    }
-                    onChange={(e) =>
-                      handleChange(product.id, "remark", e.target.value)
-                    }
-                    className={isSellingBelowAverage ? "border-danger" : ""}
-                    placeholder={
-                      isSellingBelowAverage ? "Required" : "Enter remark"
-                    }
-                  />
-                </td>
+        {/* Product Table */}
+        <div className="table-responsive">
+          <Table striped bordered hover className="mt-3">
+            <thead className="table-light">
+              <tr>
+                <th>No.</th>
+                <th>Batch No</th>
+                <th>Description</th>
+                <th>UOM</th>
+                <th>Quantity</th>
+                <th>Reorder Level</th>
+                <th>Average Cost</th>
+                <th>Selling Price</th>
+                <th>Remark</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </Table>
-      {/* Pagination */}
-      <Pagination className="justify-content-center mt-4">
-        {[...Array(totalPages).keys()].map((number) => (
-          <Pagination.Item
-            key={number + 1}
-            active={number + 1 === currentPage}
-            onClick={() => handlePageChange(number + 1)}
-          >
-            {number + 1}
-          </Pagination.Item>
-        ))}
-      </Pagination>
+            </thead>
+            <tbody>
+              {currentProducts.map((product, index) => {
+                const isSellingBelowAverage =
+                  editedProducts[product.id]?.sellingPrice <
+                  product.averageCost;
+
+                return (
+                  <tr key={product.id}>
+                    <td>{indexOfFirstItem + index + 1}</td>
+                    <td>
+                      <Form.Control
+                        type="text"
+                        value={
+                          editedProducts[product.id]?.batchNumber ??
+                          product.batchNumber
+                        }
+                        onChange={(e) =>
+                          handleChange(
+                            product.id,
+                            "batchNumber",
+                            e.target.value
+                          )
+                        }
+                        className="form-control-sm"
+                      />
+                    </td>
+                    <td>
+                      <Form.Control
+                        type="text"
+                        value={editedProducts[product.id]?.name ?? product.name}
+                        onChange={(e) =>
+                          handleChange(product.id, "name", e.target.value)
+                        }
+                        className="form-control-sm"
+                      />
+                    </td>
+                    <td>
+                      <Form.Control
+                        type="text"
+                        value={
+                          editedProducts[product.id]?.unitOfMeasurement ??
+                          product.unitOfMeasurement
+                        }
+                        onChange={(e) =>
+                          handleChange(
+                            product.id,
+                            "unitOfMeasurement",
+                            e.target.value
+                          )
+                        }
+                        className="form-control-sm"
+                      />
+                    </td>
+                    <td className="text-center">{product.quantity}</td>
+
+                    <td>
+                      <Form.Control
+                        type="number"
+                        value={
+                          editedProducts[product.id]?.reorderLevel ??
+                          product.reorderLevel
+                        }
+                        onChange={(e) =>
+                          handleChange(
+                            product.id,
+                            "reorderLevel",
+                            e.target.value
+                          )
+                        }
+                        min="0"
+                        className="form-control-sm"
+                      />
+                    </td>
+                    <td className="text-center">{product.averageCost}</td>
+
+                    <td>
+                      <Form.Control
+                        type="number"
+                        value={
+                          editedProducts[product.id]?.sellingPrice ??
+                          product.sellingPrice
+                        }
+                        onChange={(e) =>
+                          handleChange(
+                            product.id,
+                            "sellingPrice",
+                            e.target.value
+                          )
+                        }
+                        min="0"
+                        className={`form-control-sm ${
+                          validationErrors[product.id] ? "is-invalid" : ""
+                        }`}
+                      />
+                      {validationErrors[product.id] && (
+                        <div className="invalid-feedback">
+                          {validationErrors[product.id]}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <Form.Control
+                        type="text"
+                        value={
+                          editedProducts[product.id]?.remark ??
+                          product.remark ??
+                          ""
+                        }
+                        onChange={(e) =>
+                          handleChange(product.id, "remark", e.target.value)
+                        }
+                        className={`form-control-sm ${
+                          isSellingBelowAverage ? "is-invalid" : ""
+                        }`}
+                        placeholder={
+                          isSellingBelowAverage ? "Required" : "Enter remark"
+                        }
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Pagination className="justify-content-center mt-4">
+            <Pagination.Prev
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            />
+            {[...Array(totalPages).keys()].map((number) => (
+              <Pagination.Item
+                key={number + 1}
+                active={number + 1 === currentPage}
+                onClick={() => handlePageChange(number + 1)}
+              >
+                {number + 1}
+              </Pagination.Item>
+            ))}
+            <Pagination.Next
+              onClick={() =>
+                handlePageChange(Math.min(totalPages, currentPage + 1))
+              }
+              disabled={currentPage === totalPages}
+            />
+          </Pagination>
+        )}
+      </div>
     </div>
   );
 };
