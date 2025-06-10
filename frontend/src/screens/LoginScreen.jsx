@@ -7,7 +7,6 @@ import { useLoginMutation } from "../slices/userApiSlice";
 import { setCredentials } from "../slices/authSlice";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Loader from "../components/Loader";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -78,7 +77,7 @@ const LoginScreen = () => {
             className="w-100 mt-3 py- h-10"
             disabled={isLoading}
           >
-            {isLoading ? <Loader size="xs" /> : "Login"}
+            {isLoading ? "Logging in" : "Login"}
           </Button>
         </Form>
 
