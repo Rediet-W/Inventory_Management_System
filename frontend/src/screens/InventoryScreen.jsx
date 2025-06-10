@@ -6,6 +6,8 @@ import {
   Row,
   Col,
   Spinner,
+  Modal,
+  Form,
   Button,
 } from "react-bootstrap";
 import {
@@ -17,6 +19,7 @@ import { triggerRefresh } from "../slices/refreshSlice";
 import SearchBar from "../components/SearchBar";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useCreateAdjustmentMutation } from "../slices/adjustmentApiSlice";
 
 const InventoryPage = () => {
   const dispatch = useDispatch();
@@ -29,6 +32,14 @@ const InventoryPage = () => {
   const [searchType, setSearchType] = useState("batchNumber");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+  // for adjustments
+  const { userInfo } = useSelector((state) => state.auth);
+  const [showAdjustModal, setShowAdjustModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [newQuantity, setNewQuantity] = useState("");
+  const [reason, setReason] = useState("");
+  const [createAdjustment, { isLoading: isCreating }] =
+    useCreateAdjustmentMutation();
 
   useEffect(() => {
     refetch();
@@ -181,6 +192,8 @@ const InventoryPage = () => {
                   <th>Avg Cost</th>
                   <th>Total Cost</th>
                   <th>Actions</th>
+                  {(userInfo?.role === "admin" ||
+                    userInfo?.role === "superadmin") && <th>Adjust</th>}
                 </tr>
               </thead>
               <tbody>
@@ -212,6 +225,22 @@ const InventoryPage = () => {
                         <i className="bi bi-trash"></i>
                       </Button>
                     </td>
+                    {userInfo?.role === "admin" && (
+                      <td>
+                        <Button
+                          variant="outline-warning"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setNewQuantity(product.quantity);
+                            setReason("");
+                            setShowAdjustModal(true);
+                          }}
+                        >
+                          Adjust
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -244,6 +273,78 @@ const InventoryPage = () => {
           )}
         </div>
       </div>
+      <Modal
+        show={showAdjustModal}
+        onHide={() => setShowAdjustModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Request Inventory Adjustment</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            <strong>Product:</strong> {selectedProduct?.name}
+          </p>
+          <p>
+            <strong>Batch:</strong> {selectedProduct?.batchNumber}
+          </p>
+          <p>
+            <strong>Current Qty:</strong> {selectedProduct?.quantity}
+          </p>
+          <Form.Group controlId="newQty" className="mb-3">
+            <Form.Label>New Quantity</Form.Label>
+            <Form.Control
+              type="number"
+              value={newQuantity}
+              onChange={(e) => setNewQuantity(e.target.value)}
+              placeholder="Enter corrected quantity"
+              min="0"
+            />
+          </Form.Group>
+          <Form.Group controlId="reason">
+            <Form.Label>Reason for Adjustment</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={2}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Explain why the adjustment is needed"
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAdjustModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={async () => {
+              if (!newQuantity || !reason) {
+                toast.error("Please fill all fields.");
+                return;
+              }
+              try {
+                await createAdjustment({
+                  type: "purchase",
+                  batchNumber: selectedProduct.batchNumber,
+                  oldQuantity: selectedProduct.quantity,
+                  quantity: parseInt(newQuantity),
+                  reason,
+                  requestedBy: userInfo.name,
+                  mode: userInfo.isPrimaryAdmin ? "direct" : "requested",
+                }).unwrap();
+                toast.success("Adjustment request submitted.");
+                setShowAdjustModal(false);
+              } catch (err) {
+                toast.error("Failed to submit adjustment.");
+              }
+            }}
+            disabled={isCreating}
+          >
+            {isCreating ? "Submitting..." : "Submit Request"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

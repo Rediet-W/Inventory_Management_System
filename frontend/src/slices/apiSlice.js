@@ -11,7 +11,6 @@ const baseQuery = fetchBaseQuery({
 
     if (userInfo?.token) {
       headers.set("Authorization", `Bearer ${userInfo.token}`);
-      console.log("Sending request with token:", userInfo.token);
     } else {
       console.warn(" No token found in Redux state.");
     }

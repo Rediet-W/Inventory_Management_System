@@ -9,6 +9,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from "recharts";
 import moment from "moment";
 import { toast } from "react-toastify";
@@ -77,7 +79,7 @@ const AnalysisPage = () => {
       }
 
       const totalSold = salesList.reduce(
-        (sum, sale) => sum + (parseInt(sale.quantity, 10) || 0),
+        (sum, sale) => sum + (sale.totalSellingPrice || 0),
         0
       );
 
@@ -91,9 +93,7 @@ const AnalysisPage = () => {
   return (
     <Container className="mt-4">
       <div className="bg-white p-4 rounded-3 shadow-sm">
-        <h2 className="text-center mb-4" style={{ color: "#1E43FA" }}>
-          Shop Sales Analysis
-        </h2>
+        <h2 className="text-center mb-4">Shop Sales Analysis</h2>
 
         <Row className="mb-4 g-3">
           <Col md={6}>
@@ -160,17 +160,13 @@ const AnalysisPage = () => {
                     )
                   </h5>
                   <div style={{ height: "300px" }}>
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={processedMonthlySales.topProducts}>
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip />
                         <Legend />
-                        <Bar
-                          dataKey="total_sold"
-                          fill="#1E43FA"
-                          radius={[4, 4, 0, 0]}
-                        />
+                        <Bar dataKey="total_sold" fill="#007bff" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -189,17 +185,19 @@ const AnalysisPage = () => {
                 </h5>
                 <div style={{ height: "300px" }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={processedYearlySales}>
+                    <LineChart data={processedYearlySales}>
                       <XAxis dataKey="month" />
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar
+                      <Line
+                        type="monotone"
                         dataKey="total_sold"
-                        fill="#28a745"
-                        radius={[4, 4, 0, 0]}
+                        stroke="#28a745"
+                        strokeWidth={3}
+                        dot={{ r: 6 }}
                       />
-                    </BarChart>
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>

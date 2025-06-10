@@ -7,6 +7,7 @@ import {
   Row,
   Col,
   Form,
+  Spinner,
 } from "react-bootstrap";
 import {
   useGetProductsQuery,
@@ -156,13 +157,11 @@ const ManagementPage = () => {
   return (
     <div className="container mt-4">
       <div className="bg-white p-4 rounded-3 shadow-sm">
-        <h3 className="text-center mb-4" style={{ color: "#1E43FA" }}>
-          Product Management
-        </h3>
+        <h3 className="text-center mb-4">Product Management</h3>
 
         {/* Search Bar and Save Button in One Row */}
-        <Row className="align-items-center mb-4">
-          <Col md={8}>
+        <Row className="align-items-center mb-4 flex justify-between">
+          <Col md={6}>
             <SearchBar
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}

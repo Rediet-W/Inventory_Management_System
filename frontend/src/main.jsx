@@ -30,6 +30,8 @@ import TransferPage from "./screens/TransferPage.jsx";
 import StockCard from "./screens/StockCard.jsx";
 import ShopCardPage from "./screens/ShopCard.jsx";
 import DailySalesPage from "./screens/DailySalesPage.jsx";
+import AdjustmentsPage from "./screens/AdjustmentPage.jsx";
+import PurchaseAdjustmentPage from "./screens/PurchaseAdjustmentPage.jsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -53,6 +55,11 @@ const router = createBrowserRouter(
       <Route path="/stockcard" element={<StockCard />} />
       <Route path="/shopcard" element={<ShopCardPage />} />
       <Route path="/dailysales" element={<DailySalesPage />} />
+      <Route path="/adjustments" element={<AdjustmentsPage />} />
+      <Route
+        path="/purchase-adjustments"
+        element={<PurchaseAdjustmentPage />}
+      />
     </Route>
   )
 );

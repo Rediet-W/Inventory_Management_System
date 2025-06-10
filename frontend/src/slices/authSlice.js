@@ -11,14 +11,11 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials: (state, action) => {
-      console.log("🛠️ Dispatching setCredentials:", action.payload);
-
       if (action.payload?.success) {
         const userInfo = action.payload.data;
         if (userInfo && userInfo.token) {
           state.userInfo = userInfo;
           localStorage.setItem("userInfo", JSON.stringify(userInfo));
-          console.log("✅ User info stored in localStorage:", userInfo);
         } else {
           console.error("❌ Token missing in response:", action.payload);
         }
@@ -27,7 +24,6 @@ const authSlice = createSlice({
       }
     },
     logout: (state) => {
-      console.log("🔴 Logging out...");
       state.userInfo = null;
       localStorage.removeItem("userInfo");
     },

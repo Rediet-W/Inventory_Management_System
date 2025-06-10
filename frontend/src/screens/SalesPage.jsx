@@ -149,7 +149,9 @@ const SalesPage = () => {
     <div className="container-fluid p-4">
       <div className="card border-0 shadow-sm">
         <div className="card-body">
-          <h3 className="card-title text-center mb-4">Sales Entry</h3>
+          <h3 className="mb-0" style={{ color: "#1E43FA" }}>
+            Sales Entry
+          </h3>
           <h5 className="text-center text-muted mb-4">Date: {date}</h5>
 
           <Row className="mb-4">

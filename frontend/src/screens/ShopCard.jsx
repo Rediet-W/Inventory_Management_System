@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Table, Form, Row, Col, Spinner } from "react-bootstrap";
+import { Table, Form, Row, Col, Spinner, Card, Badge } from "react-bootstrap";
 import {
   useGetAllTransfersQuery,
   useGetTransferByBatchNumberQuery,
@@ -96,9 +96,16 @@ const ShopCardPage = () => {
 
   return (
     <div className="container-fluid p-4">
-      <div className="card border-0 shadow-sm">
-        <div className="card-body">
-          <h3 className="card-title text-center mb-4">Shop Card</h3>
+      <Card className="border-0 shadow-sm">
+        <Card.Body className="p-4">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h3 className="mb-0" style={{ color: "#1E43FA" }}>
+              Shop Card
+            </h3>
+            <Badge bg="light" text="dark" className="fs-6">
+              {selectedBatch ? `Batch: ${selectedBatch}` : "Select a batch"}
+            </Badge>
+          </div>
 
           <Row className="mb-4 g-3">
             <Col md={4}>
@@ -107,7 +114,7 @@ const ShopCardPage = () => {
                 <Form.Select
                   value={selectedBatch}
                   onChange={(e) => setSelectedBatch(e.target.value)}
-                  className="form-select-sm"
+                  className="form-select"
                 >
                   <option value="">Select Batch</option>
                   {batchNumbers.length > 0 ? (
@@ -129,7 +136,7 @@ const ShopCardPage = () => {
                   type="text"
                   value={product?.name || ""}
                   disabled
-                  className="form-control-sm"
+                  className="form-control"
                 />
               </Form.Group>
             </Col>
@@ -140,7 +147,7 @@ const ShopCardPage = () => {
                   type="text"
                   value={product?.unitOfMeasurement || ""}
                   disabled
-                  className="form-control-sm"
+                  className="form-control"
                 />
               </Form.Group>
             </Col>
@@ -175,30 +182,62 @@ const ShopCardPage = () => {
                 </thead>
                 <tbody>
                   {shopMovements.length > 0 ? (
-                    shopMovements.map((movement, index) => (
-                      <tr key={index}>
-                        <td>{new Date(movement.date).toLocaleDateString()}</td>
-                        <td>{movement.ref}</td>
-                        <td>{movement.inQty || "-"}</td>
-                        <td>
-                          {movement.inTotalCost > 0
-                            ? movement.inTotalCost.toFixed(2)
-                            : "-"}
-                        </td>
-                        <td>{movement.outQty || "-"}</td>
-                        <td>
-                          {movement.outUnitPrice > 0
-                            ? movement.outUnitPrice.toFixed(2)
-                            : "-"}
-                        </td>
-                        <td>
-                          {movement.outTotalPrice > 0
-                            ? movement.outTotalPrice.toFixed(2)
-                            : "-"}
-                        </td>
-                        <td>{movement.balance}</td>
-                      </tr>
-                    ))
+                    shopMovements.map((movement, index) => {
+                      // Properly check for negative values
+                      const hasNegativeQty =
+                        movement.inQty < 0 ||
+                        movement.outQty < 0 ||
+                        movement.balance < 0;
+
+                      return (
+                        <tr
+                          key={index}
+                          className={hasNegativeQty ? "table-warning" : ""}
+                        >
+                          <td>
+                            {new Date(movement.date).toLocaleDateString()}
+                          </td>
+                          <td>
+                            <Badge
+                              bg={
+                                movement.ref === "Sale" ? "info" : "secondary"
+                              }
+                              className="text-uppercase"
+                            >
+                              {movement.ref}
+                            </Badge>
+                          </td>
+                          <td>{movement.inQty || "-"}</td>
+                          <td>
+                            {movement.inTotalCost > 0
+                              ? movement.inTotalCost.toFixed(2)
+                              : "-"}
+                          </td>
+                          <td>{movement.outQty || "-"}</td>
+                          <td>
+                            {movement.outUnitPrice > 0
+                              ? movement.outUnitPrice.toFixed(2)
+                              : "-"}
+                          </td>
+                          <td>
+                            {movement.outTotalPrice > 0
+                              ? movement.outTotalPrice.toFixed(2)
+                              : "-"}
+                          </td>
+                          <td>
+                            <span
+                              className={
+                                movement.balance < 0
+                                  ? "text-danger fw-bold"
+                                  : ""
+                              }
+                            >
+                              {movement.balance}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan="8" className="text-center py-4 text-muted">
@@ -212,8 +251,8 @@ const ShopCardPage = () => {
               </Table>
             </div>
           )}
-        </div>
-      </div>
+        </Card.Body>
+      </Card>
     </div>
   );
 };

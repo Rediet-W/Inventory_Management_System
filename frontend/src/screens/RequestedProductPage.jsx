@@ -214,7 +214,9 @@ const RequestedProductsPage = () => {
         <div className="card-body">
           <Row className="align-items-center mb-4">
             <Col>
-              <h2 className="card-title mb-0">Lost Sales</h2>
+              <h3 className="mb-0" style={{ color: "#1E43FA" }}>
+                Lost Sales
+              </h3>
             </Col>
             {userInfo?.role !== "admin" && (
               <Col className="text-end">

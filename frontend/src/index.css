@@ -92,7 +92,20 @@
   transition: width 0.3s ease-in-out;
   z-index: 1000;
 }
+.nav-link:focus {
+  background: #0b174b !important;
+}
 
+.nav-link:active {
+  background: #0b174b !important;
+}
+.nav-item:active {
+  background: #0b174b !important;
+}
+.nav-item:focus,
+.nav-item:active {
+  background: #1e43fa !important;
+}
 .collapsed-sidebar {
   width: 80px;
 }

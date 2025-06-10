@@ -103,6 +103,11 @@ const Sidebar = () => {
       icon: <FaUserFriends />,
       links: [
         userInfo?.isPrimaryAdmin && {
+          to: "/adjustments",
+          label: "Adjustments",
+          icon: <FaExchangeAlt />,
+        },
+        userInfo?.isPrimaryAdmin && {
           to: "/management",
           label: "Management",
           icon: <FaUserFriends />,
@@ -190,16 +195,16 @@ const Sidebar = () => {
               padding: "12px 15px",
               transition: "all 0.3s ease",
               borderRadius: "8px",
-              color: "rgba(255, 255, 255, 0.9)",
+              color: "#FAC446",
               textDecoration: "none",
-              background:
-                location.pathname === "/dashboard"
-                  ? "rgba(255, 255, 255, 0.15)"
-                  : "transparent",
+              // background:
+              //   location.pathname === "/dashboard"
+              //     ? "rgba(255, 255, 255, 0.1)"
+              //     : "transparent",
             }}
             onMouseEnter={(e) =>
               location.pathname !== "/dashboard" &&
-              (e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)")
+              (e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)")
             }
             onMouseLeave={(e) =>
               (e.currentTarget.style.background =
@@ -243,11 +248,11 @@ const Sidebar = () => {
                 padding: "12px 15px",
                 transition: "all 0.3s ease",
                 borderRadius: "8px",
-                color: "rgba(255, 255, 255, 0.9)",
+                color: "#FAC446",
                 textDecoration: "none",
                 background:
                   location.pathname === "/summary"
-                    ? "rgba(255, 255, 255, 0.15)"
+                    ? "rgba(255, 255, 255, 0.1)"
                     : "transparent",
               }}
               onMouseEnter={(e) =>
@@ -299,7 +304,7 @@ const Sidebar = () => {
                 style={{
                   padding: "12px 15px",
                   cursor: "pointer",
-                  color: "rgba(255, 255, 255, 0.9)",
+                  color: "#FAC446",
                   fontWeight: "500",
                   borderRadius: "8px",
                   transition: "all 0.3s ease",
@@ -357,7 +362,7 @@ const Sidebar = () => {
                           padding: "10px 15px",
                           transition: "all 0.3s ease",
                           borderRadius: "8px",
-                          color: "rgba(255, 255, 255, 0.8)",
+                          color: "#FAC446",
                           textDecoration: "none",
                           fontSize: "0.85rem",
                           background:

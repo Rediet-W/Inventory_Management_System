@@ -28,8 +28,6 @@ export const createPurchase = async (data) => {
     await product.save();
   } else {
     averageCost = data.unitCost;
-    console.log("averageCost", averageCost);
-    console.log("data from purchase service", data);
     await Product.create({
       name: data.name,
       batchNumber: data.batchNumber,

@@ -55,6 +55,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginVertical: "8px",
   },
+  negativeCell: {
+    color: "transparent", // Hide negative values
+  },
 });
 
 const PurchasePDF = ({ purchases, date, totalPurchase }) => (
@@ -92,33 +95,54 @@ const PurchasePDF = ({ purchases, date, totalPurchase }) => (
         </View>
 
         {/* Table Rows */}
-        {purchases.map((purchase, index) => (
-          <View style={styles.tableRow} key={index}>
-            <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{index + 1}</Text>
+        {purchases.map((purchase, index) => {
+          const isNegativeQty = Number(purchase.quantity) < 0;
+          return (
+            <View style={styles.tableRow} key={index}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableCell}>{index + 1}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableCell}>{purchase.batchNumber}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableCell}>{purchase.name}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableCell}>
+                  {purchase.unitOfMeasurement}
+                </Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableCell}>{purchase.quantity}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    isNegativeQty && styles.negativeCell,
+                  ]}
+                >
+                  {isNegativeQty ? "-" : Number(purchase.unitCost).toFixed(2)}
+                </Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    isNegativeQty && styles.negativeCell,
+                  ]}
+                >
+                  {isNegativeQty
+                    ? "-"
+                    : (
+                        Number(purchase.unitCost) * Number(purchase.quantity)
+                      ).toFixed(2)}
+                </Text>
+              </View>
             </View>
-            <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{purchase.batchNumber}</Text>
-            </View>
-            <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{purchase.name}</Text>
-            </View>
-            <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{purchase.unitOfMeasurement}</Text>
-            </View>
-            <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{purchase.quantity}</Text>
-            </View>
-            <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{purchase.unitCost}</Text>
-            </View>
-            <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>
-                {purchase.unitCost * purchase.quantity}
-              </Text>
-            </View>
-          </View>
-        ))}
+          );
+        })}
         <View style={styles.tableRow}>
           <View style={styles.tableCol}>
             <Text style={styles.tableCell}>Total</Text>

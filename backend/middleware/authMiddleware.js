@@ -12,10 +12,7 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    console.log("🔍 Received Token:", token); // Debugging
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("✅ Decoded Token:", decoded); // Debugging
 
     const user = await User.findByPk(decoded.id, {
       attributes: ["id", "name", "email", "role", "is_primary_admin"],
@@ -36,7 +33,6 @@ const protect = asyncHandler(async (req, res, next) => {
       isPrimaryAdmin: user.is_primary_admin,
     };
 
-    console.log("✅ Authenticated User:", req.user); // Debugging
     next();
   } catch (error) {
     console.error("🚨 Token verification failed:", error);

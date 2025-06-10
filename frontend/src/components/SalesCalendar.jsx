@@ -23,7 +23,6 @@ const SalesCalendar = () => {
   });
 
   useEffect(() => {
-    console.log(sales, "sales");
     if (sales?.success && sales.data) {
       // ✅ Check if response was successful
       const salesByProduct = sales.data.reduce((acc, sale) => {

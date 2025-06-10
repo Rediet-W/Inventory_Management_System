@@ -134,7 +134,9 @@ const AddProductPage = () => {
     <Container fluid className="p-4">
       <div className="card border-0 shadow-sm">
         <div className="card-body">
-          <h2 className="card-title text-center mb-4">Add Purchases</h2>
+          <h3 className="mb-0" style={{ color: "#1E43FA" }}>
+            Add Purchases
+          </h3>
 
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 

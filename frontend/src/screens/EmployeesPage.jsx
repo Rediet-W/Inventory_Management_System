@@ -53,9 +53,7 @@ const EmployeesPage = () => {
   return (
     <div className="container mt-4">
       <div className="bg-white p-4 rounded-3 shadow-sm">
-        <h2 className="text-center mb-4" style={{ color: "#1E43FA" }}>
-          Users Management
-        </h2>
+        <h2 className="text-center mb-4">Users Management</h2>
 
         {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
