@@ -101,7 +101,7 @@ const PurchasesPDF = ({
               </Text>
             </View>
             <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{purchase.quantity}</Text>
+              <Text style={styles.tableCell}>{purchase.quantitySold}</Text>
             </View>
             <View style={styles.tableCol}>
               <Text style={styles.tableCell}>{purchase.unitCost} </Text>

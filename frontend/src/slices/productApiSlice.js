@@ -127,6 +127,7 @@ export const {
   useGetProductsQuery,
   useGetProductByIdQuery,
   useGetProductByBatchNumberQuery,
+  useLazyGetProductByBatchNumberQuery,
   useGetProductsByDateQuery,
   useCreateProductMutation,
   useUpdateProductMutation,

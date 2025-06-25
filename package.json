@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "concurrently": "^8.0.1",
+    "jest-environment-jsdom": "^30.0.0",
     "nodemon": "^2.0.22"
   }
 }

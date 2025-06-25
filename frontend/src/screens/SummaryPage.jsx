@@ -181,7 +181,7 @@ const SummaryPage = () => {
                         {sale?.createdAt?.split("T")[0] || "Unknown Date"}
                       </td>
                       <td>{sale.name || "Unknown Product"}</td>
-                      <td>{sale.quantity}</td>
+                      <td>{sale.quantitySold}</td>
                       <td>
                         {hasNegativeQty ? "Adjustment" : sale.unitSellingPrice}{" "}
                       </td>
