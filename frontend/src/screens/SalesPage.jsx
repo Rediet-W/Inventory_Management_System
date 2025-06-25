@@ -2,15 +2,27 @@ import React, { useState, useEffect } from "react";
 import { Table, Button, Row, Col, Form, Spinner } from "react-bootstrap";
 import { useGetShopProductsQuery } from "../slices/shopApiSlice";
 import { useAddSaleMutation } from "../slices/salesApiSlice";
+import { useLazyGetSaleUnitsQuery } from "../slices/salesunitApiSlice";
 import { triggerRefresh } from "../slices/refreshSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
+import { useLazyGetProductByBatchNumberQuery } from "../slices/productApiSlice";
 import "react-toastify/dist/ReactToastify.css";
 
 const SalesPage = () => {
   const dispatch = useDispatch();
   const { data: shopData, isLoading, error } = useGetShopProductsQuery();
   const [addSale, { isLoading: isSubmitting }] = useAddSaleMutation();
+  const [triggerGetUnits, { data: saleUnitsData, error: unitsError }] =
+    useLazyGetSaleUnitsQuery();
+  const [triggerGetProductByBatchNumber] =
+    useLazyGetProductByBatchNumberQuery();
+  useEffect(() => {
+    if (unitsError) {
+      console.error("Error fetching sale units:", unitsError);
+    }
+  }, [unitsError]);
+
   const { userInfo } = useSelector((state) => state.auth);
 
   const [sales, setSales] = useState([]);
@@ -18,60 +30,102 @@ const SalesPage = () => {
 
   useEffect(() => {
     if (shopData?.allProducts?.length > 0) {
-      setSales([
-        {
-          id: Date.now(),
-          product: "",
-          batchNumber: "",
-          unitOfMeasurement: "",
-          sellingPrice: "",
-          qty: 0,
-          quantitySold: "",
-          totalSellingPrice: "",
-        },
-      ]);
+      setSales([createEmptyRow()]);
     }
   }, [shopData]);
 
+  const createEmptyRow = () => ({
+    id: Date.now(),
+    product: "",
+    batchNumber: "",
+    qty: 0,
+    quantitySold: "",
+    totalSellingPrice: "",
+    availableUnits: [],
+    selectedUOM: "",
+    sellingPrice: 0,
+    unitQuantity: 1,
+  });
+
   const handleAddRow = () => {
-    setSales([
-      ...sales,
-      {
-        id: Date.now(),
-        product: "",
-        batchNumber: "",
-        unitOfMeasurement: "",
-        sellingPrice: "",
-        qty: 0,
-        quantitySold: "",
-        totalSellingPrice: "",
-      },
-    ]);
+    setSales([...sales, createEmptyRow()]);
   };
 
   const handleRemoveRow = (id) => {
     setSales(sales.filter((sale) => sale.id !== id));
   };
 
-  const handleProductSelect = (id, selectedProduct) => {
+  const handleProductSelect = async (id, selectedProductName) => {
     const product = shopData.allProducts.find(
-      (p) => p.name === selectedProduct
+      (p) => p.name === selectedProductName
     );
+    if (!product) return;
+    const togetid = await triggerGetProductByBatchNumber(
+      product.batchNumber
+    ).unwrap();
+    const response = await triggerGetUnits(togetid.id, true).unwrap();
+    const units = response?.data || [];
+    // console.log("id", product, "togetid", togetid);
+    // console.log("Units for product:", units);
+
+    const baseUnit = units.find((u) => u.baseUnit) || units[0];
+
+    // Fallback if no sale units are found
+    const selectedUOM = baseUnit?.name || product.unitOfMeasurement;
+    const unitQuantity = baseUnit?.unitQuantity || 1;
+    const sellingPrice = baseUnit?.sellingPrice || product.sellingPrice;
+    const qtyInSelectedUnit = baseUnit
+      ? Math.floor(product.quantity / (baseUnit.unitQuantity || 1))
+      : product.quantity;
     setSales((prev) =>
       prev.map((sale) =>
         sale.id === id
           ? {
               ...sale,
-              product: selectedProduct,
+              product: selectedProductName,
               batchNumber: product.batchNumber,
-              unitOfMeasurement: product.unitOfMeasurement,
-              sellingPrice: product.sellingPrice,
-              qty: product.quantity,
-              quantitySold: "",
-              totalSellingPrice: "",
+              baseQty: product.quantity,
+              qty: qtyInSelectedUnit,
+              availableUnits: units,
+              selectedUOM,
+              unitQuantity,
+              sellingPrice,
             }
           : sale
       )
+    );
+  };
+
+  const handleUOMChange = (id, uomName) => {
+    setSales((prev) =>
+      prev.map((sale) => {
+        if (sale.id !== id) return sale;
+
+        const selectedUnit = sale.availableUnits.find(
+          (u) => u.name === uomName
+        );
+        // If selected unit is base, show baseQty directly
+        const isBaseUnit = selectedUnit?.baseUnit;
+        console.log(
+          "Selected unit:",
+          selectedUnit,
+          isBaseUnit,
+          sale.baseQty,
+          sale
+        );
+        const qtyInSelectedUnit = selectedUnit
+          ? Math.floor(sale.baseQty / (selectedUnit.unitQuantity || 1))
+          : sale.baseQty;
+        console.log("Qty in selected unit:", qtyInSelectedUnit);
+        return {
+          ...sale,
+          selectedUOM: uomName,
+          unitQuantity: selectedUnit.unitQuantity,
+          sellingPrice: selectedUnit.sellingPrice,
+          qty: qtyInSelectedUnit,
+          totalSellingPrice: sale.quantitySold * selectedUnit.sellingPrice || 0,
+        };
+      })
     );
   };
 
@@ -90,46 +144,44 @@ const SalesPage = () => {
   };
 
   const handleSubmit = async () => {
-    const invalidSales = sales.filter(
-      (s) => s.quantitySold > s.qty || s.quantitySold <= 0
-    );
-    if (invalidSales.length > 0) {
-      toast.error(
-        "Ensure sale quantity is valid and does not exceed available stock.",
-        {
-          position: "top-center",
-          autoClose: 5000,
-        }
+    const invalidSales = sales.filter((s) => {
+      // Find the shop product for this sale
+      const shopProduct = shopData.allProducts.find(
+        (p) => p.batchNumber === s.batchNumber
       );
+      const availableBaseUnits = shopProduct ? shopProduct.quantity : 0;
+      const soldBaseUnits = Number(s.quantitySold) * s.unitQuantity;
+      return s.quantitySold < 0 || soldBaseUnits > availableBaseUnits;
+    });
+
+    if (invalidSales.length > 0) {
+      toast.error("Invalid quantity or stock exceeded.", {
+        position: "top-center",
+      });
       return;
     }
-
     try {
       await Promise.all(
         sales.map((sale) =>
           addSale({
             name: sale.product,
             batchNumber: sale.batchNumber,
-            unitOfMeasurement: sale.unitOfMeasurement,
-            sellingPrice: sale.sellingPrice,
-            quantity: Number(sale.quantitySold),
+            unitOfMeasurement: sale.selectedUOM,
+            unitSellingPrice: sale.sellingPrice, // price for selected UOM
+            quantitySold: Number(sale.quantitySold), // in selected UOM
+            quantity: Number(sale.quantitySold) * sale.unitQuantity, // in base units
+            totalSellingPrice:
+              Number(sale.quantitySold) * Number(sale.sellingPrice),
             reference: "Sale",
             seller: userInfo.name,
           }).unwrap()
         )
       );
-
-      toast.success("Sales recorded successfully!", {
-        position: "top-center",
-        autoClose: 3000,
-      });
+      toast.success("Sales recorded successfully!");
       dispatch(triggerRefresh());
-      setSales([]);
+      setSales([createEmptyRow()]);
     } catch (error) {
-      toast.error("Failed to record sales", {
-        position: "top-center",
-        autoClose: 5000,
-      });
+      toast.error("Failed to record sales.");
     }
   };
 
@@ -222,7 +274,25 @@ const SalesPage = () => {
                       </Form.Select>
                     </td>
                     <td>{sale.batchNumber}</td>
-                    <td>{sale.unitOfMeasurement}</td>
+                    <td>
+                      {sale.availableUnits.length > 1 ? (
+                        <Form.Select
+                          value={sale.selectedUOM}
+                          onChange={(e) =>
+                            handleUOMChange(sale.id, e.target.value)
+                          }
+                          className="form-select-sm"
+                        >
+                          {sale.availableUnits.map((unit) => (
+                            <option key={unit.name} value={unit.name}>
+                              {unit.name}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      ) : (
+                        sale.selectedUOM
+                      )}
+                    </td>
                     <td>{sale.sellingPrice}</td>
                     <td>{sale.qty}</td>
                     <td>
@@ -233,7 +303,6 @@ const SalesPage = () => {
                           handleQuantityChange(sale.id, e.target.value)
                         }
                         min="1"
-                        max={sale.qty}
                         className="form-control-sm"
                       />
                     </td>

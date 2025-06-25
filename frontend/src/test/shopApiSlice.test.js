@@ -1,5 +1,4 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { configureStore } from "@reduxjs/toolkit";
 import shopApiSlice from "../slices/shopApiSlice";
 describe("shopApiSlice", () => {
   let store;

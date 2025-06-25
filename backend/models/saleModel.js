@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/db.js";
-import Shop from "./shopModel.js";
 
 const Sale = sequelize.define(
   "Sale",
@@ -27,15 +26,17 @@ const Sale = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    quantitySold: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     unitSellingPrice: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
     totalSellingPrice: {
-      type: DataTypes.VIRTUAL,
-      get() {
-        return this.quantity * this.unitSellingPrice;
-      },
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
     },
     seller: {
       type: DataTypes.STRING(255),

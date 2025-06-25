@@ -48,7 +48,7 @@ const RegisterScreen = () => {
       }
 
       dispatch(setCredentials({ success: true, data: res }));
-      toast.success("Registration successful");
+      toast.success("Registration successful", { autoClose: 2000 });
       navigate("/");
     } catch (err) {
       const errorMsg =
@@ -118,7 +118,7 @@ const RegisterScreen = () => {
             className="w-100 mt-3 py-2"
             disabled={isLoading}
           >
-            {isLoading ? <Loader size="sm" /> : "Register"}
+            {isLoading ? "Registering" : "Register"}
           </Button>
         </Form>
 

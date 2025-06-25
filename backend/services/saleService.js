@@ -52,11 +52,14 @@ export const createSale = async (data) => {
   const sale = await Sale.create({
     name: shopProduct.name,
     batchNumber: shopProduct.batchNumber,
-    unitOfMeasurement: shopProduct.unitOfMeasurement,
-    quantity: data.quantity,
-    unitSellingPrice: shopProduct.sellingPrice,
+    unitOfMeasurement: data.unitOfMeasurement,
+    quantity: data.quantity, // in base units
+    quantitySold: data.quantitySold,
+    unitSellingPrice: data.unitSellingPrice, // price for selected UOM
+    totalSellingPrice: data.totalSellingPrice,
     seller: data.seller,
-    averageCost: product.averageCost,
+    averageCost: product?.averageCost,
+    reference: data.reference,
   });
 
   shopProduct.quantity -= data.quantity;
@@ -90,6 +93,8 @@ export const updateSale = async (id, newQuantity) => {
   await shopProduct.save();
 
   sale.quantity = newQuantity;
+  sale.totalSellingPrice = sale.unitSellingPrice * newQuantity;
+  sale.quantitySold = newQuantity;
   await sale.save();
 
   return sale;

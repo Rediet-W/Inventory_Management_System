@@ -13,6 +13,7 @@ import purchaseRoute from "./routes/purchaseRoutes.js";
 import shopRoute from "./routes/shopRoutes.js";
 import transferRoute from "./routes/transferRoutes.js";
 import adjustmentRoute from "./routes/adjustmentRoutes.js";
+import saleUnitRoutes from "./routes/salesunitRoutes.js";
 
 dotenv.config();
 
@@ -64,6 +65,7 @@ const startServer = async () => {
     app.use("/api/shop", shopRoute);
     app.use("/api/transfers", transferRoute);
     app.use("/api/adjustments", adjustmentRoute);
+    app.use("/api/sale-units", saleUnitRoutes);
 
     // Serve frontend assets in production
     if (process.env.NODE_ENV === "production") {
