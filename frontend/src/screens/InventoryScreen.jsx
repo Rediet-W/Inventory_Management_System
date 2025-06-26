@@ -44,7 +44,9 @@ const InventoryPage = () => {
   useEffect(() => {
     refetch();
   }, [refreshKey, refetch]);
-
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filter]);
   const handleDeleteProduct = async (productId) => {
     try {
       const result = await new Promise((resolve) => {

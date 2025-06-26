@@ -49,6 +49,9 @@ const ShopPage = () => {
   useEffect(() => {
     refetch();
   }, [refreshKey, refetch]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filter]);
 
   // Filtering logic
   let filteredProducts = data?.allProducts || [];

@@ -12,8 +12,9 @@ import {
 import { useGetSalesByDateRangeQuery } from "../slices/salesApiSlice";
 import { useGetPurchasesByDateRangeQuery } from "../slices/purchaseApiSlice";
 import { FaPrint } from "react-icons/fa";
-import { useReactToPrint } from "react-to-print";
 import { toast } from "react-toastify";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import ReportPDF from "../pdfs/ReportPDF";
 
 const ReportPage = () => {
   const [startDate, setStartDate] = useState("");
@@ -21,60 +22,43 @@ const ReportPage = () => {
   const [applyFilters, setApplyFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Only fetch when filters are applied and both dates are set
   const { data: sales, isLoading: salesLoading } = useGetSalesByDateRangeQuery(
-    { startDate, endDate },
+    applyFilters && startDate && endDate ? { startDate, endDate } : {},
     { skip: !applyFilters }
   );
   const { data: purchases, isLoading: purchasesLoading } =
     useGetPurchasesByDateRangeQuery(
-      { startDate, endDate },
+      applyFilters && startDate && endDate ? { startDate, endDate } : {},
       { skip: !applyFilters }
     );
 
   const reportData = useMemo(() => {
     const reportRows = [];
 
-    purchases?.forEach((purchase) => {
+    purchases?.data?.forEach((purchase) => {
       reportRows.push({
-        date: new Date(purchase.purchase_date).toISOString().split("T")[0],
-        productName: purchase?.product_name || "Unknown Product",
-        amount: purchase.buying_price * purchase.quantity,
+        date: formatDate(purchase.createdAt),
+        productName: purchase?.name || "Unknown Product",
+        amount: Number(purchase.totalCost),
         type: "DR",
-        user: purchase.user_name,
+        user: purchase.purchaser,
       });
     });
 
     sales?.forEach((sale) => {
       reportRows.push({
-        date: new Date(sale.sale_date).toISOString().split("T")[0],
-        productName: sale?.product_name || "Unknown Product",
-        amount: sale.selling_price * sale.quantity_sold,
+        date: formatDate(sale.createdAt),
+        productName: sale?.name || "Unknown Product",
+        amount: Number(sale.totalSellingPrice),
         type: "CR",
-        user: sale.user_name,
+        user: sale.seller,
       });
     });
 
     return reportRows.sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [purchases, sales]);
-
   const reportRef = useRef();
-  const handlePrint = useReactToPrint({
-    content: () => reportRef.current,
-    documentTitle: `Financial_Report_${startDate}_to_${endDate}`,
-    onAfterPrint: () => toast.success("Report printed successfully!"),
-  });
-
-  const handleSafePrint = () => {
-    if (!reportRef.current) {
-      toast.error("Report content not available");
-      return;
-    }
-    if (reportData.length === 0) {
-      toast.warning("No data available to print!");
-      return;
-    }
-    handlePrint();
-  };
 
   const handleApplyFilters = () => {
     if (!startDate || !endDate) {
@@ -87,7 +71,11 @@ const ReportPage = () => {
     }
     setApplyFilters(true);
   };
-
+  function formatDate(dateValue) {
+    if (!dateValue) return "Unknown Date";
+    const date = new Date(dateValue);
+    return isNaN(date) ? "Unknown Date" : date.toISOString().split("T")[0];
+  }
   return (
     <div className="container mt-4">
       <div className="bg-white p-4 rounded-3 shadow-sm">
@@ -147,13 +135,28 @@ const ReportPage = () => {
 
         <Row className="justify-content-end mb-3">
           <Col md={3} className="text-end mb-3">
-            <Button
-              variant="success"
-              onClick={handleSafePrint}
-              disabled={reportData.length === 0}
+            <PDFDownloadLink
+              document={
+                <ReportPDF
+                  reportData={reportData}
+                  dateRange={
+                    startDate && endDate
+                      ? `${startDate} - ${endDate}`
+                      : "No date selected"
+                  }
+                />
+              }
+              fileName={`financial_report_${startDate}_to_${endDate}.pdf`}
             >
-              <FaPrint className="me-2" /> Print Report
-            </Button>
+              {({ loading }) => (
+                <button
+                  className="btn btn-success d-flex gap-2 align-items-center "
+                  disabled={loading || reportData.length === 0}
+                >
+                  <FaPrint /> {loading ? "Generating PDF..." : "Print Report"}
+                </button>
+              )}
+            </PDFDownloadLink>
           </Col>
         </Row>
 

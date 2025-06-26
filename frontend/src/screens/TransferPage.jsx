@@ -302,7 +302,11 @@ const TransferPage = () => {
           </Button>
           <PDFDownloadLink
             document={
-              <TransferPDF transfers={completedTransfers} date={date} />
+              <TransferPDF
+                transfers={completedTransfers}
+                date={date}
+                header="የፍኖተ ጽድቅ ሰ/ት/ቤት የንዋየ ቅድሳት መሸጫ ሱቅ"
+              />
             }
             fileName={`Transfer_Report_${date}.pdf`}
           >
