@@ -25,7 +25,7 @@ export const createTransfer = async (data) => {
   const product = await Product.findOne({
     where: { batchNumber: data.batchNumber },
   });
-
+  console.log(data, "from create transfer");
   if (!product) {
     return { error: "Product not found in store" };
   }

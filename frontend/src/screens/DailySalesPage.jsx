@@ -106,6 +106,7 @@ const DailySalesPage = () => {
                   <tr>
                     <th>Date</th>
                     <th>Product</th>
+                    <th>UOM</th>
                     <th>Qty</th>
                     <th>Unit Price</th>
                     <th>Total</th>
@@ -118,7 +119,8 @@ const DailySalesPage = () => {
                       <tr key={index}>
                         <td>{sale.createdAt?.split("T")[0] || "N/A"}</td>
                         <td>{sale.name || "Unknown"}</td>
-                        <td>{sale.quantity}</td>
+                        <td>{sale.unitOfMeasurement || "N/A"}</td>
+                        <td>{sale.quantitySold}</td>
                         <td>{Number(sale.unitSellingPrice).toFixed(2)}</td>
                         <td>
                           {(sale.quantity * sale.unitSellingPrice).toFixed(2)}

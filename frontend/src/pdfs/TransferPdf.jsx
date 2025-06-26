@@ -57,10 +57,12 @@ const styles = StyleSheet.create({
   },
 });
 
-const TransferPDF = ({ transfers, date }) => (
+const TransferPDF = ({ transfers, date, header }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       {/* Header */}
+      <Text style={styles.header}>{header}</Text>
+
       <Text style={styles.header}>Product Transfer to Shop</Text>
       <Text style={styles.date}>Date: {date}</Text>
 

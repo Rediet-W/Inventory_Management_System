@@ -78,6 +78,9 @@ const PurchasesPDF = ({
             <Text style={styles.tableCell}>Name</Text>
           </View>
           <View style={styles.tableCol}>
+            <Text style={styles.tableCell}>UOM</Text>
+          </View>
+          <View style={styles.tableCol}>
             <Text style={styles.tableCell}>Quantity</Text>
           </View>
           <View style={styles.tableCol}>
@@ -101,7 +104,10 @@ const PurchasesPDF = ({
               </Text>
             </View>
             <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{purchase.quantitySold}</Text>
+              <Text style={styles.tableCell}>{purchase.unitOfMeasurement}</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{purchase.quantity}</Text>
             </View>
             <View style={styles.tableCol}>
               <Text style={styles.tableCell}>{purchase.unitCost} </Text>
@@ -115,6 +121,9 @@ const PurchasesPDF = ({
         ))}
         {/* Total Row */}
         <View style={styles.tableRow}>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
+          </View>
           <View style={styles.tableCol}>
             <Text style={styles.tableCell}></Text>
           </View>

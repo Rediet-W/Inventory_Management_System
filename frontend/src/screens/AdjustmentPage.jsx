@@ -10,6 +10,8 @@ import {
   Dropdown,
   DropdownButton,
   Card,
+  Tab,
+  Tabs,
 } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import {
@@ -223,26 +225,16 @@ const AdjustmentsPage = () => {
             </DropdownButton>
           </div>
 
-          <Nav
-            variant="pills"
+          <Tabs
+            id="status-tabs"
             activeKey={statusTab}
             onSelect={setStatusTab}
-            className="mb-4 border-bottom pb-3"
+            className="mb-4"
           >
-            <Nav.Item>
-              <Nav.Link eventKey="pending" className="me-2">
-                Pending
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="approved" className="me-2">
-                Approved
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="rejected">Rejected</Nav.Link>
-            </Nav.Item>
-          </Nav>
+            <Tab eventKey="pending" title="Pending" />
+            <Tab eventKey="approved" title="Approved" />
+            <Tab eventKey="rejected" title="Rejected" />
+          </Tabs>
 
           {renderTable(filteredAdjustments)}
         </Card.Body>

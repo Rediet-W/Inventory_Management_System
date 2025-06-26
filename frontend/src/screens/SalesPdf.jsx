@@ -82,6 +82,9 @@ const SalesPDF = ({
             <Text style={styles.tableCell}>Name</Text>
           </View>
           <View style={styles.tableCol}>
+            <Text style={styles.tableCell}>UOM</Text>
+          </View>
+          <View style={styles.tableCol}>
             <Text style={styles.tableCell}>Quantity</Text>
           </View>
           <View style={styles.tableCol}>
@@ -112,7 +115,12 @@ const SalesPDF = ({
               </Text>
             </View>
             <View style={styles.tableCol}>
-              <Text style={styles.tableCell}>{sale.quantity}</Text>
+              <Text style={styles.tableCell}>
+                {sale.unitOfMeasurement || "Unknown measurement"}
+              </Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{sale.quantitySold}</Text>
             </View>
             <View style={styles.tableCol}>
               <Text style={styles.tableCell}>{sale.unitSellingPrice} </Text>
@@ -137,6 +145,9 @@ const SalesPDF = ({
         <View style={styles.tableRow}>
           <View style={styles.tableCol}>
             <Text style={styles.tableCell}>Total</Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={styles.tableCell}></Text>
           </View>
           <View style={styles.tableCol}>
             <Text style={styles.tableCell}></Text>

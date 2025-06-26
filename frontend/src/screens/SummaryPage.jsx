@@ -75,7 +75,7 @@ const SummaryPage = () => {
 
   return (
     <div className="container mt-5">
-      <h1 className="text-center mb-4 fw-bold">Shop Summary</h1>
+      <h1 className="ml-4 mb-4 fw-bold">Shop Summary</h1>
 
       {/* Date Filters */}
       <Card className="p-4 mb-4">
@@ -162,6 +162,7 @@ const SummaryPage = () => {
                 <tr>
                   <th>Date</th>
                   <th>Name</th>
+                  <th>UOM</th>
                   <th>Quantity</th>
                   <th>Unit Selling Price</th>
                   <th>Total Selling Price</th>
@@ -181,6 +182,7 @@ const SummaryPage = () => {
                         {sale?.createdAt?.split("T")[0] || "Unknown Date"}
                       </td>
                       <td>{sale.name || "Unknown Product"}</td>
+                      <td>{sale.unitOfMeasurement}</td>
                       <td>{sale.quantitySold}</td>
                       <td>
                         {hasNegativeQty ? "Adjustment" : sale.unitSellingPrice}{" "}
@@ -200,8 +202,9 @@ const SummaryPage = () => {
                   );
                 })}
                 <tr className="fw-bold">
-                  <td colSpan="4">Total </td>
-                  <td colSpan="2">{totalSales.toFixed(2)} ETB</td>
+                  <td colSpan="5">Total </td>
+                  <td colSpan="1">{totalSales.toFixed(2)} ETB</td>
+                  <td colSpan="1"></td>
                   <td colSpan="1">{totalCost.toFixed(2)} ETB</td>
                 </tr>
               </tbody>
@@ -243,6 +246,7 @@ const SummaryPage = () => {
                 <tr>
                   <th>Date</th>
                   <th>Name</th>
+                  <th>UOM</th>
                   <th>Quantity</th>
                   <th>Unit Cost</th>
                   <th>Total Cost</th>
@@ -260,6 +264,7 @@ const SummaryPage = () => {
                         {purchase?.createdAt?.split("T")[0] || "Unknown Date"}
                       </td>
                       <td>{purchase.name || "Unknown Product"}</td>
+                      <td>{purchase.unitOfMeasurement || "Unknown UOM"}</td>
                       <td>{purchase.quantity}</td>
                       <td>
                         {hasNegativeQty ? "Adjustment" : purchase.unitCost}{" "}
@@ -273,7 +278,7 @@ const SummaryPage = () => {
                   );
                 })}
                 <tr className="fw-bold">
-                  <td colSpan="4">Total</td>
+                  <td colSpan="5">Total</td>
                   <td>{totalPurchases} ETB</td>
                 </tr>
               </tbody>

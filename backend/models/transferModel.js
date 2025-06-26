@@ -38,10 +38,6 @@ const Transfer = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    reference: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-    },
   },
   {
     timestamps: true,
