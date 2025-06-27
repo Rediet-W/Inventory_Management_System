@@ -1,6 +1,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@font-face {
+  font-family: "Noto Sans Ethiopic";
+  src: url("/fonts/NotoSansEthiopic-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Noto Sans Ethiopic";
+  src: url("/fonts/NotoSansEthiopic-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Noto Sans Ethiopic";
+  src: url("/fonts/NotoSansEthiopic-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: "Noto Sans Ethiopic";
+  src: url("/fonts/NotoSansEthiopic-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+}
 /* Default sidebar width when collapsed */
 .sidebar {
   width: 80px;
@@ -154,4 +178,7 @@
 
 .nav-tabs {
   border-bottom: 1px solid #dee2e6;
+}
+body {
+  font-family: "Noto Sans Ethiopic", sans-serif;
 }
