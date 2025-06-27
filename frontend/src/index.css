@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Noto Sans Ethiopic';
+  src: url('/fonts/NotoSansEthiopic-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
 body {
   font-family: "Noto Sans Ethiopic", sans-serif;
 }
