@@ -75,11 +75,12 @@ const Sidebar = () => {
       label: "Store",
       icon: <FaBoxOpen />,
       links: [
-        userInfo?.role === "admin" && {
-          to: "/add-products",
-          label: "Purchases",
-          icon: <FaBoxOpen />,
-        },
+        userInfo?.role === "admin" &&
+          !userInfo?.isStoreManager && {
+            to: "/add-products",
+            label: "Purchases",
+            icon: <FaBoxOpen />,
+          },
         userInfo?.role === "admin" && {
           to: "/stockcard",
           label: "Stock Card",
@@ -90,11 +91,12 @@ const Sidebar = () => {
           label: "Inventory List",
           icon: <FaStore />,
         },
-        userInfo?.role === "admin" && {
-          to: "/transfer",
-          label: "Transfer to Shop",
-          icon: <FaExchangeAlt />,
-        },
+        userInfo?.role === "admin" &&
+          userInfo?.isStoreManager && {
+            to: "/transfer",
+            label: "Transfer to Shop",
+            icon: <FaExchangeAlt />,
+          },
       ].filter(Boolean),
       roles: ["admin"],
     },
