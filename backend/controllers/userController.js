@@ -40,6 +40,7 @@ export const authUser = asyncHandler(async (req, res) => {
       email: user.email,
       role: user.role,
       isPrimaryAdmin: user.is_primary_admin,
+      isStoreManager: user.is_store_manager,
       token,
     });
   } catch (error) {
@@ -90,6 +91,7 @@ export const registerUser = asyncHandler(async (req, res) => {
       email: user.email,
       role: user.role,
       isPrimaryAdmin: user.is_primary_admin,
+      isStoreManager: user.is_store_manager,
       token,
     });
   } catch (error) {
