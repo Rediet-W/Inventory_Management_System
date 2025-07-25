@@ -22,18 +22,17 @@ import {
 const Sidebar = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [openGroups, setOpenGroups] = useState({}); // Track open/closed state of groups
+  const [openGroups, setOpenGroups] = useState({});
   const location = useLocation();
 
   if (!userInfo) {
     return null;
   }
 
-  // Toggle dropdown for a group
   const toggleGroup = (group) => {
     setOpenGroups((prev) => ({
       ...prev,
-      [group]: !prev[group], // Toggle the group's open state
+      [group]: !prev[group],
     }));
   };
 

@@ -25,9 +25,9 @@
   font-weight: 700;
   font-style: italic;
 }
-body {
+/* body {
   font-family: "Noto Sans Ethiopic", sans-serif;
-}
+} */
 /* Default sidebar width when collapsed */
 .sidebar {
   width: 80px;
@@ -182,6 +182,6 @@ body {
 .nav-tabs {
   border-bottom: 1px solid #dee2e6;
 }
-body {
+/* body {
   font-family: "Noto Sans Ethiopic", sans-serif;
-}
+} */
