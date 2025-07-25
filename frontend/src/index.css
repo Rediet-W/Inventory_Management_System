@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@font-face {
+/* @font-face {
   font-family: "Noto Sans Ethiopic";
   src: url("/fonts/NotoSansEthiopic-Regular.ttf") format("truetype");
   font-weight: 400;
@@ -35,7 +35,7 @@
 body {
   font-family: "Roboto", system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
-}
+} */
 /* body {
   font-family: "Noto Sans Ethiopic", sans-serif;
 } */
