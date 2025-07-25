@@ -32,33 +32,158 @@ import ShopCardPage from "./screens/ShopCard.jsx";
 import DailySalesPage from "./screens/DailySalesPage.jsx";
 import AdjustmentsPage from "./screens/AdjustmentPage.jsx";
 import PurchaseAdjustmentPage from "./screens/PurchaseAdjustmentPage.jsx";
-
+import PrivateRoute from "./components/PrivateRoute.jsx";
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
       <Route path="/" element={<Navigate to="/login" />} />
-      <Route path="/dashboard" element={<HomeScreen />} />
       <Route path="/login" element={<LoginScreen />} />
       <Route path="/register" element={<RegisterScreen />} />
-      <Route path="/profile" element={<ProfileScreen />} />
-      <Route path="/requested" element={<RequestedProductsPage />} />
-      <Route path="/sales" element={<SalesPage />} />
-      <Route path="/add-products" element={<AddProductPage />} />
-      <Route path="/shop" element={<ShopPage />} />
-      <Route path="/employees" element={<EmployeesPage />} />
-      <Route path="/store" element={<InventoryScreen />} />
-      <Route path="/summary" element={<SummaryPage />} />
-      <Route path="/report" element={<ReportPage />} />
-      <Route path="/analysis" element={<AnalysisPage />} />
-      <Route path="/management" element={<ManagementPage />} />
-      <Route path="/transfer" element={<TransferPage />} />
-      <Route path="/stockcard" element={<StockCard />} />
-      <Route path="/shopcard" element={<ShopCardPage />} />
-      <Route path="/dailysales" element={<DailySalesPage />} />
-      <Route path="/adjustments" element={<AdjustmentsPage />} />
+
+      {/* Protected routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <PrivateRoute>
+            <HomeScreen />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <ProfileScreen />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/requested"
+        element={
+          <PrivateRoute>
+            <RequestedProductsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/sales"
+        element={
+          <PrivateRoute>
+            <SalesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/add-products"
+        element={
+          <PrivateRoute>
+            <AddProductPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/shop"
+        element={
+          <PrivateRoute>
+            <ShopPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/employees"
+        element={
+          <PrivateRoute>
+            <EmployeesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/store"
+        element={
+          <PrivateRoute>
+            <InventoryScreen />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/summary"
+        element={
+          <PrivateRoute>
+            <SummaryPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/report"
+        element={
+          <PrivateRoute>
+            <ReportPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/analysis"
+        element={
+          <PrivateRoute>
+            <AnalysisPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/management"
+        element={
+          <PrivateRoute>
+            <ManagementPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/transfer"
+        element={
+          <PrivateRoute>
+            <TransferPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/stockcard"
+        element={
+          <PrivateRoute>
+            <StockCard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/shopcard"
+        element={
+          <PrivateRoute>
+            <ShopCardPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/dailysales"
+        element={
+          <PrivateRoute>
+            <DailySalesPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/adjustments"
+        element={
+          <PrivateRoute>
+            <AdjustmentsPage />
+          </PrivateRoute>
+        }
+      />
       <Route
         path="/purchase-adjustments"
-        element={<PurchaseAdjustmentPage />}
+        element={
+          <PrivateRoute>
+            <PurchaseAdjustmentPage />
+          </PrivateRoute>
+        }
       />
     </Route>
   )
