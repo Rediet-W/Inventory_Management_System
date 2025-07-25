@@ -24,6 +24,10 @@
   src: url("/fonts/NotoSansEthiopic-BoldItalic.ttf") format("truetype");
   font-weight: 700;
   font-style: italic;
+
+body {
+  font-family: "Noto Sans Ethiopic", sans-serif;
+
 }
 /* Default sidebar width when collapsed */
 .sidebar {
